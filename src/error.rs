@@ -1,4 +1,4 @@
-#![allow(missing_docs)]
+#![allow(missing_docs, unused_doc_comment)]
 //! Error types for the sounding crate.
 use std::num;
 

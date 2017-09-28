@@ -7,7 +7,7 @@ mod surface_section;
 mod upper_air;
 mod surface;
 
-use sounding_base::Sounding;
+use sounding_base::{Sounding, MissingData};
 
 use self::surface::SurfaceData;
 use self::surface_section::{SurfaceSection, SurfaceIterator};
@@ -110,32 +110,32 @@ impl<'a> IntoIterator for &'a BufkitData<'a> {
     }
 }
 
-
 fn combine_data(ua: UpperAir, sd: SurfaceData) -> Sounding {
 
     Sounding {
         // Station info
-        num: ua.num,
+        num: ua.num.into(),
         valid_time: ua.valid_time,
-        lead_time: ua.lead_time,
-        lat: ua.lat,
-        lon: ua.lon,
-        elevation: ua.elevation,
+        lead_time: ua.lead_time.into(),
+        lat: ua.lat.into(),
+        lon: ua.lon.into(),
+        elevation: ua.elevation.into(),
 
         // Indexes
-        show: ua.show,
-        li: ua.li,
-        swet: ua.swet,
-        kinx: ua.kinx,
-        lclp: ua.lclp,
-        pwat: ua.pwat,
-        totl: ua.totl,
-        cape: ua.cape,
-        lclt: ua.lclt,
-        cins: ua.cins,
-        eqlv: ua.eqlv,
-        lfc: ua.lfc,
-        brch: ua.brch,
+        show: ua.show.into(),
+        li: ua.li.into(),
+        swet: ua.swet.into(),
+        kinx: ua.kinx.into(),
+        lclp: ua.lclp.into(),
+        pwat: ua.pwat.into(),
+        totl: ua.totl.into(),
+        cape: ua.cape.into(),
+        lclt: ua.lclt.into(),
+        cins: ua.cins.into(),
+        eqlv: ua.eqlv.into(),
+        lfc: ua.lfc.into(),
+        brch: ua.brch.into(),
+        hain: i32::MISSING.into(),
 
         // Upper air
         pressure: ua.pressure,
@@ -150,16 +150,15 @@ fn combine_data(ua: UpperAir, sd: SurfaceData) -> Sounding {
         cloud_fraction: ua.cloud_fraction,
 
         // Surface data
-        mslp: sd.mslp,
-        station_pres: sd.station_pres,
-        low_cloud: sd.low_cloud,
-        mid_cloud: sd.mid_cloud,
-        hi_cloud: sd.hi_cloud,
-        uwind: sd.uwind,
-        vwind: sd.vwind,
+        mslp: sd.mslp.into(),
+        station_pres: sd.station_pres.into(),
+        low_cloud: sd.low_cloud.into(),
+        mid_cloud: sd.mid_cloud.into(),
+        hi_cloud: sd.hi_cloud.into(),
+        uwind: sd.uwind.into(),
+        vwind: sd.vwind.into(),
     }
 }
-
 
 /// Iterator type for `BufkitData` that returns a `Sounding`.
 pub struct SoundingIterator<'a> {
