@@ -28,7 +28,8 @@ fn test_bufkit_file() {
         if file.to_str().unwrap().contains("2017040100Z_gfs3_kmso") {
             // This file has been seeded with invalid data.
             continue;
-        } else if file.to_str().unwrap().contains("nam") {
+        }
+        if file.to_str().unwrap().contains("nam") {
             assert_eq!(85, data.into_iter().count());
         } else if file.to_str().unwrap().contains("gfs") {
             assert_eq!(61, data.into_iter().count());

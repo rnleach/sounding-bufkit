@@ -156,7 +156,7 @@ impl UpperAir {
         is_valid_length(self.cloud_fraction.len()).chain_err(
             || "Wrong number of cloud fraction values.",
         )?;
-        
+
         Ok(())
     }
 }

@@ -42,17 +42,21 @@ impl BufkitFile {
         let data = self.data().chain_err(
             || "Unable to split upper air and surface sections.",
         )?;
-        data.validate().chain_err(|| "Failed validation of file format.")?;
+        data.validate().chain_err(
+            || "Failed validation of file format.",
+        )?;
 
         for sndg in &data {
-            sndg.validate().chain_err(|| "Failed data validation (not file format).")?;
+            sndg.validate().chain_err(
+                || "Failed data validation (not file format).",
+            )?;
         }
-        
+
         Ok(())
     }
 
     /// Get a bufkit data object from this file.
-    pub fn data<'a>(&'a self) -> Result<BufkitData<'a>> {
+    pub fn data(&self) -> Result<BufkitData> {
         BufkitData::new(&self.file_text)
     }
 }
@@ -79,12 +83,12 @@ impl<'a> BufkitData<'a> {
     }
 
     /// Create a new data representation from a string
-    pub fn new<'b>(text: &'b str) -> Result<BufkitData<'b>> {
+    pub fn new(text: &str) -> Result<BufkitData> {
         let break_point = BufkitData::find_break_point(text)?;
         BufkitData::new_with_break_point(text, break_point)
     }
 
-    fn new_with_break_point<'b>(text: &'b str, break_point: usize) -> Result<BufkitData<'b>> {
+    fn new_with_break_point(text: &str, break_point: usize) -> Result<BufkitData> {
         Ok(BufkitData {
             upper_air: UpperAirSection::new(&text[0..break_point]),
             surface: SurfaceSection::new(&text[break_point..]).chain_err(
@@ -115,7 +119,7 @@ impl<'a> IntoIterator for &'a BufkitData<'a> {
     }
 }
 
-fn combine_data(ua: UpperAir, sd: SurfaceData) -> Sounding {
+fn combine_data(ua: &UpperAir, sd: &SurfaceData) -> Sounding {
 
     Sounding {
         // Station info
@@ -203,7 +207,7 @@ impl<'a> Iterator for SoundingIterator<'a> {
                 next_ua = next_ua_opt.unwrap();
             }
             if next_ua.valid_time == next_sd.valid_time {
-                return Some(combine_data(next_ua, next_sd));
+                return Some(combine_data(&next_ua, &next_sd));
             }
         }
     }

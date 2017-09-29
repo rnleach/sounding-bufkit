@@ -30,8 +30,8 @@ where
     head = &head[idx..];
     // When finding the end of the value, you may go all the way to the end of the slice.
     // If so, find returns None, just convert that into the end of the slice.
-    let tail_idx = head.find(end_val).or(Some(head.len())).unwrap();
-    Ok((&head[..tail_idx].trim(), &head[tail_idx..]))
+    let tail_idx = head.find(end_val).or_else(|| Some(head.len())).unwrap();
+    Ok((head[..tail_idx].trim(), &head[tail_idx..]))
 }
 
 #[test]
@@ -236,7 +236,7 @@ fn test_find_blank_line() {
 
 /// In a list of white space delimited floating point values, find a string with `n` values.
 pub fn find_next_n_tokens(src: &str, n: usize) -> Result<Option<usize>> {
-    if src.trim().len() == 0 {
+    if src.trim().is_empty() {
         return Ok(None);
     }
 
