@@ -42,7 +42,12 @@ impl BufkitFile {
         let data = self.data().chain_err(
             || "Unable to split upper air and surface sections.",
         )?;
-        data.validate().chain_err(|| "Failed validation.")?;
+        data.validate().chain_err(|| "Failed validation of file format.")?;
+
+        for sndg in &data {
+            sndg.validate().chain_err(|| "Failed data validation (not file format).")?;
+        }
+        
         Ok(())
     }
 
@@ -115,7 +120,7 @@ fn combine_data(ua: UpperAir, sd: SurfaceData) -> Sounding {
     Sounding {
         // Station info
         num: ua.num.into(),
-        valid_time: ua.valid_time,
+        valid_time: ua.valid_time.into(),
         lead_time: ua.lead_time.into(),
         lat: ua.lat.into(),
         lon: ua.lon.into(),
@@ -138,16 +143,16 @@ fn combine_data(ua: UpperAir, sd: SurfaceData) -> Sounding {
         hain: i32::MISSING.into(),
 
         // Upper air
-        pressure: ua.pressure,
-        temperature: ua.temperature,
-        wet_bulb: ua.wet_bulb,
-        dew_point: ua.dew_point,
-        theta_e: ua.theta_e,
-        direction: ua.direction,
-        speed: ua.speed,
-        omega: ua.omega,
-        height: ua.height,
-        cloud_fraction: ua.cloud_fraction,
+        pressure: ua.pressure.iter().map(|val| (*val).into()).collect(),
+        temperature: ua.temperature.iter().map(|val| (*val).into()).collect(),
+        wet_bulb: ua.wet_bulb.iter().map(|val| (*val).into()).collect(),
+        dew_point: ua.dew_point.iter().map(|val| (*val).into()).collect(),
+        theta_e: ua.theta_e.iter().map(|val| (*val).into()).collect(),
+        direction: ua.direction.iter().map(|val| (*val).into()).collect(),
+        speed: ua.speed.iter().map(|val| (*val).into()).collect(),
+        omega: ua.omega.iter().map(|val| (*val).into()).collect(),
+        height: ua.height.iter().map(|val| (*val).into()).collect(),
+        cloud_fraction: ua.cloud_fraction.iter().map(|val| (*val).into()).collect(),
 
         // Surface data
         mslp: sd.mslp.into(),

@@ -156,12 +156,7 @@ impl UpperAir {
         is_valid_length(self.cloud_fraction.len()).chain_err(
             || "Wrong number of cloud fraction values.",
         )?;
-
-        // TODO: Check that pressure always decreases with height.
-        // TODO: Check height always increases with height.
-        // TODO: Check that dew point < wet bulb < t
-        // TODO: Check that indexes have sane values
-
+        
         Ok(())
     }
 }
