@@ -14,36 +14,36 @@ pub struct UpperAir {
     pub num: i32, // station number, USAF number, eg 727730
     pub valid_time: NaiveDateTime, // valid time of sounding
     pub lead_time: i32, // Forecast lead time in hours from model initialization
-    pub lat: f32, // latitude
-    pub lon: f32, // longitude
-    pub elevation: f32, // elevation (m)
+    pub lat: f64, // latitude
+    pub lon: f64, // longitude
+    pub elevation: f64, // elevation (m)
 
     // Indexes
-    pub show: f32, // Showalter index
-    pub li: f32, // Lifted index
-    pub swet: f32, // Severe Weather Threat index
-    pub kinx: f32, // K-index
-    pub lclp: f32, // Lifting Condensation Level (hPa)
-    pub pwat: f32, // Precipitable water (mm)
-    pub totl: f32, // Total-Totals
-    pub cape: f32, // Convective Available Potential Energy
-    pub lclt: f32, // Temperature at LCL (K)
-    pub cins: f32, // Convective Inhibitive Energy
-    pub eqlv: f32, // Equilibrium Level (hPa)
-    pub lfc: f32, // Level of Free Convection (hPa)
-    pub brch: f32, // Bulk Richardson Number
+    pub show: f64, // Showalter index
+    pub li: f64, // Lifted index
+    pub swet: f64, // Severe Weather Threat index
+    pub kinx: f64, // K-index
+    pub lclp: f64, // Lifting Condensation Level (hPa)
+    pub pwat: f64, // Precipitable water (mm)
+    pub totl: f64, // Total-Totals
+    pub cape: f64, // Convective Available Potential Energy
+    pub lclt: f64, // Temperature at LCL (K)
+    pub cins: f64, // Convective Inhibitive Energy
+    pub eqlv: f64, // Equilibrium Level (hPa)
+    pub lfc: f64, // Level of Free Convection (hPa)
+    pub brch: f64, // Bulk Richardson Number
 
     // Upper air
-    pub pressure: Vec<f32>, // Pressure (hPa)
-    pub temperature: Vec<f32>, // Temperature (C)
-    pub wet_bulb: Vec<f32>, // Wet Bulb (C)
-    pub dew_point: Vec<f32>, // Dew Point (C)
-    pub theta_e: Vec<f32>, // Equivalent Potential Temperature (K)
-    pub direction: Vec<f32>, // Wind direction (degrees)
-    pub speed: Vec<f32>, // Wind speed (knots)
-    pub omega: Vec<f32>, // Pressure vertical velocity (Pa/sec)
-    pub height: Vec<f32>, // height above MSL in meters
-    pub cloud_fraction: Vec<f32>, // Cloud fraction
+    pub pressure: Vec<f64>, // Pressure (hPa)
+    pub temperature: Vec<f64>, // Temperature (C)
+    pub wet_bulb: Vec<f64>, // Wet Bulb (C)
+    pub dew_point: Vec<f64>, // Dew Point (C)
+    pub theta_e: Vec<f64>, // Equivalent Potential Temperature (K)
+    pub direction: Vec<f64>, // Wind direction (degrees)
+    pub speed: Vec<f64>, // Wind speed (knots)
+    pub omega: Vec<f64>, // Pressure vertical velocity (Pa/sec)
+    pub height: Vec<f64>, // height above MSL in meters
+    pub cloud_fraction: Vec<f64>, // Cloud fraction
 }
 
 impl UpperAir {

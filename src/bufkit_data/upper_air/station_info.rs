@@ -10,9 +10,9 @@ pub struct StationInfo {
     pub num: i32, // station number, USAF number, eg 727730
     pub valid_time: NaiveDateTime, // valid time of sounding
     pub lead_time: i32, // Forecast lead time in hours from model initialization
-    pub lat: f32, // latitude
-    pub lon: f32, // longitude
-    pub elevation: f32, // elevation (m)
+    pub lat: f64, // latitude
+    pub lon: f64, // longitude
+    pub elevation: f64, // elevation (m)
 }
 
 impl StationInfo {
@@ -31,7 +31,7 @@ impl StationInfo {
         // SELV - Station elevation (m)
         // STIM - Forecast hour
 
-        use parse_util::{parse_kv, parse_f32, parse_i32, parse_naive_date_time};
+        use parse_util::{parse_kv, parse_f64, parse_i32, parse_naive_date_time};
 
         // Get station num
         let (station_num, head) = parse_i32(src, "STNM").chain_err(|| "Unable to parse STNM")?;
@@ -46,11 +46,11 @@ impl StationInfo {
         )?;
 
         // get latitude, longitude, and elevation
-        let (lat, head) = parse_f32(head, "SLAT").chain_err(|| "Unable to parse SLAT")?;
+        let (lat, head) = parse_f64(head, "SLAT").chain_err(|| "Unable to parse SLAT")?;
 
-        let (lon, head) = parse_f32(head, "SLON").chain_err(|| "Unable to parse SLON")?;
+        let (lon, head) = parse_f64(head, "SLON").chain_err(|| "Unable to parse SLON")?;
 
-        let (elv, head) = parse_f32(head, "SELV").chain_err(|| "Unable to parse SELV")?;
+        let (elv, head) = parse_f64(head, "SELV").chain_err(|| "Unable to parse SELV")?;
 
         // get the lead time
         let (lt, _) = parse_i32(head, "STIM").chain_err(|| "Unable to parse STIM")?;

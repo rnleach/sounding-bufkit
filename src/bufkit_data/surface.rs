@@ -8,13 +8,13 @@ use error::*;
 pub struct SurfaceData {
     pub station_num: i32, // Same is in StationInfo
     pub valid_time: NaiveDateTime, // Always assume UTC.
-    pub mslp: f32, // Surface pressure reduce to mean sea level (mb or hPa, the same)
-    pub station_pres: f32, // Surface pressure
-    pub low_cloud: f32, // low cloud coverage percent
-    pub mid_cloud: f32, // mid cloud coverage percent
-    pub hi_cloud: f32, // high cloud coverage percent
-    pub uwind: f32, // zonal surface wind (m/s)
-    pub vwind: f32, // meridional surface wind (m/s)
+    pub mslp: f64, // Surface pressure reduce to mean sea level (mb or hPa, the same)
+    pub station_pres: f64, // Surface pressure
+    pub low_cloud: f64, // low cloud coverage percent
+    pub mid_cloud: f64, // mid cloud coverage percent
+    pub hi_cloud: f64, // high cloud coverage percent
+    pub uwind: f64, // zonal surface wind (m/s)
+    pub vwind: f64, // meridional surface wind (m/s)
 }
 
 impl SurfaceData {
@@ -68,19 +68,19 @@ impl SurfaceData {
             if let Some(token) = tokens.next() {
                 use self::SfcColName::*;
                 use parse_util::*;
-                let _dummy: f32; // Used just to check that there is a valid value there.
+                let _dummy: f64; // Used just to check that there is a valid value there.
 
                 match cols.names[i] {
-                    NONE => _dummy = f32::from_str(token)?,
+                    NONE => _dummy = f64::from_str(token)?,
                     STN => sd.station_num = i32::from_str(token)?,
                     VALIDTIME => sd.valid_time = parse_naive_date_time(token)?,
-                    PMSL => sd.mslp = f32::from_str(token)?,
-                    PRES => sd.station_pres = f32::from_str(token)?,
-                    LCLD => sd.low_cloud = f32::from_str(token)?,
-                    MCLD => sd.mid_cloud = f32::from_str(token)?,
-                    HCLD => sd.hi_cloud = f32::from_str(token)?,
-                    UWND => sd.uwind = f32::from_str(token)?,
-                    VWND => sd.vwind = f32::from_str(token)?,
+                    PMSL => sd.mslp = f64::from_str(token)?,
+                    PRES => sd.station_pres = f64::from_str(token)?,
+                    LCLD => sd.low_cloud = f64::from_str(token)?,
+                    MCLD => sd.mid_cloud = f64::from_str(token)?,
+                    HCLD => sd.hi_cloud = f64::from_str(token)?,
+                    UWND => sd.uwind = f64::from_str(token)?,
+                    VWND => sd.vwind = f64::from_str(token)?,
                 };
 
             } else {

@@ -4,16 +4,16 @@ use error::*;
 
 #[derive(Debug)]
 pub struct Profile {
-    pub pressure: Vec<f32>, // Pressure (hPa)
-    pub temperature: Vec<f32>, // Temperature (C)
-    pub wet_bulb: Vec<f32>, // Wet Bulb (C)
-    pub dew_point: Vec<f32>, // Dew Point (C)
-    pub theta_e: Vec<f32>, // Equivalent Potential Temperature (K)
-    pub direction: Vec<f32>, // Wind direction (degrees)
-    pub speed: Vec<f32>, // Wind speed (knots)
-    pub omega: Vec<f32>, // Pressure vertical velocity (Pa/sec)
-    pub height: Vec<f32>, // height above MSL in meters
-    pub cloud_fraction: Vec<f32>, // Cloud fraction
+    pub pressure: Vec<f64>, // Pressure (hPa)
+    pub temperature: Vec<f64>, // Temperature (C)
+    pub wet_bulb: Vec<f64>, // Wet Bulb (C)
+    pub dew_point: Vec<f64>, // Dew Point (C)
+    pub theta_e: Vec<f64>, // Equivalent Potential Temperature (K)
+    pub direction: Vec<f64>, // Wind direction (degrees)
+    pub speed: Vec<f64>, // Wind speed (knots)
+    pub omega: Vec<f64>, // Pressure vertical velocity (Pa/sec)
+    pub height: Vec<f64>, // height above MSL in meters
+    pub cloud_fraction: Vec<f64>, // Cloud fraction
 }
 
 impl Profile {
@@ -91,7 +91,7 @@ impl Profile {
         for (i, text_val) in values.enumerate() {
             use self::ColName::*;
 
-            let val = f32::from_str(text_val).chain_err(|| "unable to parse")?;
+            let val = f64::from_str(text_val).chain_err(|| "unable to parse")?;
 
             match cols.names[i % num_cols] {
                 NONE => return Err(Error::from("Unrecognized column in profile values.")),

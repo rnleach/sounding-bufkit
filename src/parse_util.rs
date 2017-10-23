@@ -76,33 +76,33 @@ fn test_parse_kv() {
     }
 }
 
-/// Parse an f32 value.
-pub fn parse_f32<'a, 'b>(src: &'a str, key: &'b str) -> Result<(f32, &'a str)> {
+/// Parse an f64 value.
+pub fn parse_f64<'a, 'b>(src: &'a str, key: &'b str) -> Result<(f64, &'a str)> {
     use std::str::FromStr;
 
     let (val_to_parse, head) = parse_kv(src, key, |c| char::is_digit(c, 10) || c == '-', |c| {
         !(char::is_digit(c, 10) || c == '.' || c == '-')
     })?;
-    let val = f32::from_str(val_to_parse)?;
+    let val = f64::from_str(val_to_parse)?;
     Ok((val, head))
 }
 
 #[test]
 #[cfg_attr(rustfmt, rustfmt_skip)]
-fn test_parse_f32() {
+fn test_parse_f64() {
     let test_data =
         "STID = STNM = 727730 TIME = 170401/0000 \
          SLAT = 46.92 SLON = -114.08 SELV = 972.0 \
          STIM = 0";
 
-    if let Ok((lat, head)) = parse_f32(test_data, "SLAT") {
+    if let Ok((lat, head)) = parse_f64(test_data, "SLAT") {
         assert_eq!(lat, 46.92);
         assert_eq!(head, " SLON = -114.08 SELV = 972.0 STIM = 0");
     } else {
         assert!(false, "There was an error parsing.");
     }
 
-    if let Ok((lon, head)) = parse_f32(test_data, "SLON") {
+    if let Ok((lon, head)) = parse_f64(test_data, "SLON") {
         assert_eq!(lon, -114.08);
         assert_eq!(head, " SELV = 972.0 STIM = 0");
     } else {
