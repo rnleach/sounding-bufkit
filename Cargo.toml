@@ -1,6 +1,6 @@
 [package]
 name = "sounding-bufkit"
-version = "0.0.7"
+version = "0.0.8"
 authors = ["Ryan Leach <clumsycodemonkey@gmail.com>"]
 description = """Library to parse and load Bufkit sounding files."""
 repository = "https://github.com/rnleach/sounding-bufkit.git"
@@ -9,6 +9,6 @@ license-file = "LICENSE"
 exclude = ["**/*.rs.bk",".gitignore",".vscode/**/*", "tests/**/*", "example_data/**/*", "bufkit_parameters.txt"]
 
 [dependencies]
-sounding-base = "^0.0.9"
+sounding-base = "^0.0.10"
 chrono="^0.4"
 error-chain = "^0.11"
