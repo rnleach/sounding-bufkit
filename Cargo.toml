@@ -9,6 +9,6 @@ license-file = "LICENSE"
 exclude = ["**/*.rs.bk",".gitignore",".vscode/**/*", "tests/**/*", "example_data/**/*", "bufkit_parameters.txt"]
 
 [dependencies]
-sounding-base = "^0.0.11"
+sounding-base = "^0.0.12"
 chrono="^0.4"
 error-chain = "^0.11"
