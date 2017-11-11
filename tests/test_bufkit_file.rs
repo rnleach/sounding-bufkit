@@ -3,7 +3,7 @@ extern crate sounding_bufkit;
 use sounding_bufkit::BufkitFile;
 use std::path::Path;
 
-const EXAMPLE_DIR: &'static str = "example_data";
+const EXAMPLE_DIR: &str = "example_data";
 
 #[test]
 fn test_bufkit_file() {
