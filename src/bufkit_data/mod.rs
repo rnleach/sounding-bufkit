@@ -7,7 +7,7 @@ mod surface_section;
 mod upper_air;
 mod surface;
 
-use sounding_base::{Sounding, MissingData};
+use sounding_base::{Sounding, OptionVal};
 
 use self::surface::SurfaceData;
 use self::surface_section::{SurfaceSection, SurfaceIterator};
@@ -38,19 +38,13 @@ impl BufkitFile {
     }
 
     /// Validate the whole file, ensure it is parseable and do some sanity checks.
-    pub fn validate(&self) -> Result<()> {
+    pub fn validate_file_format(&self) -> Result<()> {
         let data = self.data().chain_err(
             || "Unable to split upper air and surface sections.",
         )?;
         data.validate().chain_err(
             || "Failed validation of file format.",
         )?;
-
-        for sndg in &data {
-            sndg.validate().chain_err(
-                || "Failed data validation (not file format).",
-            )?;
-        }
 
         Ok(())
     }
@@ -121,52 +115,61 @@ impl<'a> IntoIterator for &'a BufkitData<'a> {
 
 fn combine_data(ua: &UpperAir, sd: &SurfaceData) -> Sounding {
 
-    Sounding {
-        // Station info
-        num: ua.num.into(),
-        valid_time: ua.valid_time.into(),
-        lead_time: ua.lead_time.into(),
-        lat: ua.lat.into(),
-        lon: ua.lon.into(),
-        elevation: ua.elevation.into(),
+    use sounding_base::Profile::*;
+    use sounding_base::Index::*;
+    use sounding_base::Surface::*;
+
+    Sounding::new()
+        .set_station_num(ua.num)
+        .set_valid_time(ua.valid_time)
+        .set_lead_time(ua.lead_time)
+        .set_location(ua.lat, ua.lon, ua.elevation)
 
         // Indexes
-        show: ua.show.into(),
-        li: ua.li.into(),
-        swet: ua.swet.into(),
-        kinx: ua.kinx.into(),
-        lclp: ua.lclp.into(),
-        pwat: ua.pwat.into(),
-        totl: ua.totl.into(),
-        cape: ua.cape.into(),
-        lclt: ua.lclt.into(),
-        cins: ua.cins.into(),
-        eqlv: ua.eqlv.into(),
-        lfc: ua.lfc.into(),
-        brch: ua.brch.into(),
-        hain: i32::MISSING.into(),
+        .set_index(Showalter,ua.show)
+        .set_index(LI, ua.li)
+        .set_index(SWeT, ua.swet)
+        .set_index(K, ua.kinx)
+        .set_index(LCL, ua.lclp)
+        .set_index(PWAT, ua.pwat)
+        .set_index(TotalTotals, ua.totl)
+        .set_index(CAPE, ua.cape)
+        .set_index(LCLTemperature, ua.lclt)
+        .set_index(CIN, ua.cins)
+        .set_index(EquilibrimLevel, ua.eqlv)
+        .set_index(LFC, ua.lfc)
+        .set_index(BulkRichardsonNumber, ua.brch)
 
         // Upper air
-        pressure: ua.pressure.iter().map(|val| (*val).into()).collect(),
-        temperature: ua.temperature.iter().map(|val| (*val).into()).collect(),
-        wet_bulb: ua.wet_bulb.iter().map(|val| (*val).into()).collect(),
-        dew_point: ua.dew_point.iter().map(|val| (*val).into()).collect(),
-        theta_e: ua.theta_e.iter().map(|val| (*val).into()).collect(),
-        direction: ua.direction.iter().map(|val| (*val).into()).collect(),
-        speed: ua.speed.iter().map(|val| (*val).into()).collect(),
-        omega: ua.omega.iter().map(|val| (*val).into()).collect(),
-        height: ua.height.iter().map(|val| (*val).into()).collect(),
-        cloud_fraction: ua.cloud_fraction.iter().map(|val| (*val).into()).collect(),
+        .set_profile(Pressure,
+            ua.pressure.iter().map(|val| OptionVal::from(*val)).collect::<Vec<_>>())
+        .set_profile(Temperature,
+            ua.temperature.iter().map(|val| OptionVal::from(*val)).collect::<Vec<_>>())
+        .set_profile(WetBulb,
+            ua.wet_bulb.iter().map(|val| OptionVal::from(*val)).collect::<Vec<_>>())
+        .set_profile(DewPoint,
+            ua.dew_point.iter().map(|val| OptionVal::from(*val)).collect::<Vec<_>>())
+        .set_profile(ThetaE,
+            ua.theta_e.iter().map(|val| OptionVal::from(*val)).collect::<Vec<_>>())
+        .set_profile(WindDirection,
+            ua.direction.iter().map(|val| OptionVal::from(*val)).collect::<Vec<_>>())
+        .set_profile(WindSpeed,
+            ua.speed.iter().map(|val| OptionVal::from(*val)).collect::<Vec<_>>())
+        .set_profile(PressureVerticalVelocity,
+            ua.omega.iter().map(|val| OptionVal::from(*val)).collect::<Vec<_>>())
+        .set_profile(GeopotentialHeight,
+            ua.height.iter().map(|val| OptionVal::from(*val)).collect::<Vec<_>>())
+        .set_profile(CloudFraction,
+            ua.cloud_fraction.iter().map(|val| OptionVal::from(*val)).collect::<Vec<_>>())
 
         // Surface data
-        mslp: sd.mslp.into(),
-        station_pres: sd.station_pres.into(),
-        low_cloud: sd.low_cloud.into(),
-        mid_cloud: sd.mid_cloud.into(),
-        hi_cloud: sd.hi_cloud.into(),
-        uwind: sd.uwind.into(),
-        vwind: sd.vwind.into(),
-    }
+        .set_surface_value(MSLP, sd.mslp)
+        .set_surface_value(StationPressure, sd.station_pres)
+        .set_surface_value(LowCloud, sd.low_cloud)
+        .set_surface_value(MidCloud, sd.mid_cloud)
+        .set_surface_value(HighCloud, sd.hi_cloud)
+        .set_surface_value(UWind, sd.uwind)
+        .set_surface_value(VWind, sd.vwind)
 }
 
 /// Iterator type for `BufkitData` that returns a `Sounding`.

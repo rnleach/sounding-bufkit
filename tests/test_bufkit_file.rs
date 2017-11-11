@@ -67,12 +67,12 @@ fn validate_dir(dir: &Path) {
         let example_file = BufkitFile::load(&file).expect("Error loading data.");
         if file.to_str().unwrap().contains("2017040100Z_gfs_kmso") {
             assert!(
-                example_file.validate().is_err(),
+                example_file.validate_file_format().is_err(),
                 format!("Erroneously passed validation: {:?}", file)
             );
         } else {
             assert!(
-                example_file.validate().is_ok(),
+                example_file.validate_file_format().is_ok(),
                 format!("Failded validation: {:?}", file)
             );
         }
