@@ -11,16 +11,16 @@ use error::*;
 #[derive(Debug)]
 pub struct UpperAir {
     // Station info
-    pub num: i32, // station number, USAF number, eg 727730
+    pub num: i32,                  // station number, USAF number, eg 727730
     pub valid_time: NaiveDateTime, // valid time of sounding
-    pub lead_time: i32, // Forecast lead time in hours from model initialization
-    pub lat: f64, // latitude
-    pub lon: f64, // longitude
-    pub elevation: f64, // elevation (m)
+    pub lead_time: i32,            // Forecast lead time in hours from model initialization
+    pub lat: f64,                  // latitude
+    pub lon: f64,                  // longitude
+    pub elevation: f64,            // elevation (m)
 
     // Indexes
     pub show: f64, // Showalter index
-    pub li: f64, // Lifted index
+    pub li: f64,   // Lifted index
     pub swet: f64, // Severe Weather Threat index
     pub kinx: f64, // K-index
     pub lclp: f64, // Lifting Condensation Level (hPa)
@@ -30,19 +30,19 @@ pub struct UpperAir {
     pub lclt: f64, // Temperature at LCL (K)
     pub cins: f64, // Convective Inhibitive Energy
     pub eqlv: f64, // Equilibrium Level (hPa)
-    pub lfc: f64, // Level of Free Convection (hPa)
+    pub lfc: f64,  // Level of Free Convection (hPa)
     pub brch: f64, // Bulk Richardson Number
 
     // Upper air
-    pub pressure: Vec<f64>, // Pressure (hPa)
-    pub temperature: Vec<f64>, // Temperature (C)
-    pub wet_bulb: Vec<f64>, // Wet Bulb (C)
-    pub dew_point: Vec<f64>, // Dew Point (C)
-    pub theta_e: Vec<f64>, // Equivalent Potential Temperature (K)
-    pub direction: Vec<f64>, // Wind direction (degrees)
-    pub speed: Vec<f64>, // Wind speed (knots)
-    pub omega: Vec<f64>, // Pressure vertical velocity (Pa/sec)
-    pub height: Vec<f64>, // height above MSL in meters
+    pub pressure: Vec<f64>,       // Pressure (hPa)
+    pub temperature: Vec<f64>,    // Temperature (C)
+    pub wet_bulb: Vec<f64>,       // Wet Bulb (C)
+    pub dew_point: Vec<f64>,      // Dew Point (C)
+    pub theta_e: Vec<f64>,        // Equivalent Potential Temperature (K)
+    pub direction: Vec<f64>,      // Wind direction (degrees)
+    pub speed: Vec<f64>,          // Wind speed (knots)
+    pub omega: Vec<f64>,          // Pressure vertical velocity (Pa/sec)
+    pub height: Vec<f64>,         // height above MSL in meters
     pub cloud_fraction: Vec<f64>, // Cloud fraction
 }
 
@@ -54,25 +54,18 @@ impl UpperAir {
         use self::indexes::Indexes;
         use self::profile::Profile;
 
-        let mut break_point = find_blank_line(text).ok_or_else(|| {
-            Error::from("Unable to find station info section.")
-        })?;
+        let mut break_point = find_blank_line(text)
+            .ok_or_else(|| Error::from("Unable to find station info section."))?;
         let (station_info_section, the_rest) = text.split_at(break_point);
 
-        break_point = find_blank_line(the_rest).ok_or_else(|| {
-            Error::from("Unable to find split index and upper air sections.")
-        })?;
+        break_point = find_blank_line(the_rest)
+            .ok_or_else(|| Error::from("Unable to find split index and upper air sections."))?;
         let (index_section, upper_air_section) = the_rest.split_at(break_point);
 
-        let station_info = StationInfo::parse(station_info_section).chain_err(
-            || "Error parsing station info.",
-        )?;
-        let indexes = Indexes::parse(index_section).chain_err(
-            || "Error parsing indexes.",
-        )?;
-        let upper_air = Profile::parse(upper_air_section).chain_err(
-            || "Error parsing profile.",
-        )?;
+        let station_info =
+            StationInfo::parse(station_info_section).chain_err(|| "Error parsing station info.")?;
+        let indexes = Indexes::parse(index_section).chain_err(|| "Error parsing indexes.")?;
+        let upper_air = Profile::parse(upper_air_section).chain_err(|| "Error parsing profile.")?;
 
         Ok(UpperAir {
             // Station info
@@ -114,48 +107,34 @@ impl UpperAir {
 
     /// Validate the sounding
     pub fn validate(&self) -> Result<()> {
-
         // Pressure is mandatory
         let len = self.pressure.len();
         if len == 0 {
             return Err(Error::from("No pressure data."));
         }
 
-        let is_valid_length = |l| if l == 0 || l == len {
-            Ok(())
-        } else {
-            Err(Error::from(
-                "Number of values does not match number of pressure levels.",
-            ))
+        let is_valid_length = |l| {
+            if l == 0 || l == len {
+                Ok(())
+            } else {
+                Err(Error::from(
+                    "Number of values does not match number of pressure levels.",
+                ))
+            }
         };
 
-        is_valid_length(self.temperature.len()).chain_err(
-            || "Wrong number of temperature values.",
-        )?;
-        is_valid_length(self.wet_bulb.len()).chain_err(
-            || "Wrong number of wet bulb values.",
-        )?;
-        is_valid_length(self.dew_point.len()).chain_err(
-            || "Wrong number of dew point values.",
-        )?;
-        is_valid_length(self.theta_e.len()).chain_err(
-            || "Wrong number of theta-e values.",
-        )?;
-        is_valid_length(self.direction.len()).chain_err(
-            || "Wrong number of wind direction values.",
-        )?;
-        is_valid_length(self.speed.len()).chain_err(
-            || "Wrong number of wind speed values.",
-        )?;
-        is_valid_length(self.omega.len()).chain_err(
-            || "Wrong number of omega values.",
-        )?;
-        is_valid_length(self.height.len()).chain_err(
-            || "Wrong number of height values.",
-        )?;
-        is_valid_length(self.cloud_fraction.len()).chain_err(
-            || "Wrong number of cloud fraction values.",
-        )?;
+        is_valid_length(self.temperature.len())
+            .chain_err(|| "Wrong number of temperature values.")?;
+        is_valid_length(self.wet_bulb.len()).chain_err(|| "Wrong number of wet bulb values.")?;
+        is_valid_length(self.dew_point.len()).chain_err(|| "Wrong number of dew point values.")?;
+        is_valid_length(self.theta_e.len()).chain_err(|| "Wrong number of theta-e values.")?;
+        is_valid_length(self.direction.len())
+            .chain_err(|| "Wrong number of wind direction values.")?;
+        is_valid_length(self.speed.len()).chain_err(|| "Wrong number of wind speed values.")?;
+        is_valid_length(self.omega.len()).chain_err(|| "Wrong number of omega values.")?;
+        is_valid_length(self.height.len()).chain_err(|| "Wrong number of height values.")?;
+        is_valid_length(self.cloud_fraction.len())
+            .chain_err(|| "Wrong number of cloud fraction values.")?;
 
         Ok(())
     }

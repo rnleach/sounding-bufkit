@@ -19,9 +19,7 @@ impl<'a> UpperAirSection<'a> {
         let mut iter = self.into_iter();
 
         while let Some(chunk) = iter.get_next_chunk() {
-            let ua = UpperAir::parse(chunk).chain_err(
-                || "Chunk failed to parse.",
-            )?;
+            let ua = UpperAir::parse(chunk).chain_err(|| "Chunk failed to parse.")?;
             ua.validate().chain_err(|| "Chunk failed validation.")?;
         }
         Ok(())
@@ -33,7 +31,9 @@ impl<'a> IntoIterator for &'a UpperAirSection<'a> {
     type IntoIter = UpperAirIterator<'a>;
 
     fn into_iter(self) -> Self::IntoIter {
-        UpperAirIterator { remaining: self.raw_text }
+        UpperAirIterator {
+            remaining: self.raw_text,
+        }
     }
 }
 
@@ -51,8 +51,8 @@ impl<'a> UpperAirIterator<'a> {
         if let Some(start) = self.remaining.find("STID =") {
             let end = self.remaining[(start + 2)..]
                 .find("STID =")
-                .unwrap_or_else(|| self.remaining[(start + 2)..].len()) +
-                (start + 2);
+                .unwrap_or_else(|| self.remaining[(start + 2)..].len())
+                + (start + 2);
             next_chunk = &self.remaining[start..end];
             self.remaining = &self.remaining[end..];
         } else {
@@ -2218,7 +2218,6 @@ mod test {
 
     #[test]
     fn test_validation() {
-
         let sounding = UpperAirSection::new(get_valid_test_data());
         assert!(sounding.validate_section().is_ok());
 

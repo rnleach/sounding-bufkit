@@ -7,18 +7,14 @@ const EXAMPLE_DIR: &str = "example_data";
 
 #[test]
 fn test_bufkit_file() {
-
     let example_dir = Path::new(EXAMPLE_DIR);
     assert!(example_dir.is_dir(), "Example data directory not found.");
-
 
     let files: Vec<_> = example_dir
         .read_dir()
         .unwrap()
         .map(|res| res.unwrap().path())
-        .filter(|path| {
-            path.to_str().unwrap().ends_with(".buf") && path.is_file()
-        })
+        .filter(|path| path.to_str().unwrap().ends_with(".buf") && path.is_file())
         .collect();
 
     for file in files {
@@ -39,7 +35,6 @@ fn test_bufkit_file() {
 
 #[test]
 fn test_bufkit_file_validation() {
-
     let example_dir = Path::new(EXAMPLE_DIR);
     assert!(example_dir.is_dir(), "Example data directory not found.");
 
@@ -47,14 +42,11 @@ fn test_bufkit_file_validation() {
 }
 
 fn validate_dir(dir: &Path) {
-
     assert!(dir.is_dir(), "Example data directory not found.");
     let files: Vec<_> = dir.read_dir()
         .unwrap()
         .map(|res| res.unwrap().path())
-        .filter(|path| {
-            path.is_file() && path.to_str().unwrap().ends_with(".buf")
-        })
+        .filter(|path| path.is_file() && path.to_str().unwrap().ends_with(".buf"))
         .collect();
 
     let sub_dirs: Vec<_> = dir.read_dir()

@@ -14,4 +14,4 @@ mod error;
 mod parse_util;
 
 pub use error::*;
-pub use bufkit_data::{BufkitFile, BufkitData, SoundingIterator};
+pub use bufkit_data::{BufkitData, BufkitFile, SoundingIterator};

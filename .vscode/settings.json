@@ -2,10 +2,7 @@
     "files.exclude": {
         "target": true,
         "Cargo.lock": true,
-        "**/*.rs.bk": true
-    },
-
-    // Shell program for integrated shell
-  "terminal.integrated.shell.windows": "C:\\Program Files\\Git\\bin\\bash.exe",
-  "terminal.integrated.shellArgs.windows": ["--login"] 
+        "**/*.rs.bk": true,
+        "*.sublime*":true
+    } 
 }

@@ -7,12 +7,12 @@ use error::*;
 /// Information related to the geographic location of the sounding.
 #[derive(Debug)]
 pub struct StationInfo {
-    pub num: i32, // station number, USAF number, eg 727730
+    pub num: i32,                  // station number, USAF number, eg 727730
     pub valid_time: NaiveDateTime, // valid time of sounding
-    pub lead_time: i32, // Forecast lead time in hours from model initialization
-    pub lat: f64, // latitude
-    pub lon: f64, // longitude
-    pub elevation: f64, // elevation (m)
+    pub lead_time: i32,            // Forecast lead time in hours from model initialization
+    pub lat: f64,                  // latitude
+    pub lon: f64,                  // longitude
+    pub elevation: f64,            // elevation (m)
 }
 
 impl StationInfo {
@@ -31,19 +31,20 @@ impl StationInfo {
         // SELV - Station elevation (m)
         // STIM - Forecast hour
 
-        use parse_util::{parse_kv, parse_f64, parse_i32, parse_naive_date_time};
+        use parse_util::{parse_kv, parse_naive_date_time, parse_f64, parse_i32};
 
         // Get station num
         let (station_num, head) = parse_i32(src, "STNM").chain_err(|| "Unable to parse STNM")?;
 
         // Get valid time
-        let (val_to_parse, head) = parse_kv(head, "TIME", |c| char::is_digit(c, 10), |c| {
-            !(char::is_digit(c, 10) || c == '/')
-        }).chain_err(|| "Unable to find time string.")?;
+        let (val_to_parse, head) = parse_kv(
+            head,
+            "TIME",
+            |c| char::is_digit(c, 10),
+            |c| !(char::is_digit(c, 10) || c == '/'),
+        ).chain_err(|| "Unable to find time string.")?;
 
-        let vt = parse_naive_date_time(val_to_parse).chain_err(
-            || "Unable to parse time.",
-        )?;
+        let vt = parse_naive_date_time(val_to_parse).chain_err(|| "Unable to parse time.")?;
 
         // get latitude, longitude, and elevation
         let (lat, head) = parse_f64(head, "SLAT").chain_err(|| "Unable to parse SLAT")?;

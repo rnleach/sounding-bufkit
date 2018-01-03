@@ -4,39 +4,33 @@ use error::*;
 
 #[derive(Debug)]
 pub struct Profile {
-    pub pressure: Vec<f64>, // Pressure (hPa)
-    pub temperature: Vec<f64>, // Temperature (C)
-    pub wet_bulb: Vec<f64>, // Wet Bulb (C)
-    pub dew_point: Vec<f64>, // Dew Point (C)
-    pub theta_e: Vec<f64>, // Equivalent Potential Temperature (K)
-    pub direction: Vec<f64>, // Wind direction (degrees)
-    pub speed: Vec<f64>, // Wind speed (knots)
-    pub omega: Vec<f64>, // Pressure vertical velocity (Pa/sec)
-    pub height: Vec<f64>, // height above MSL in meters
+    pub pressure: Vec<f64>,       // Pressure (hPa)
+    pub temperature: Vec<f64>,    // Temperature (C)
+    pub wet_bulb: Vec<f64>,       // Wet Bulb (C)
+    pub dew_point: Vec<f64>,      // Dew Point (C)
+    pub theta_e: Vec<f64>,        // Equivalent Potential Temperature (K)
+    pub direction: Vec<f64>,      // Wind direction (degrees)
+    pub speed: Vec<f64>,          // Wind speed (knots)
+    pub omega: Vec<f64>,          // Pressure vertical velocity (Pa/sec)
+    pub height: Vec<f64>,         // height above MSL in meters
     pub cloud_fraction: Vec<f64>, // Cloud fraction
 }
 
 impl Profile {
     /// Given a String or slice of characters, parse them into an Profile struct.
     pub fn parse(src: &str) -> Result<Profile> {
-
-        let (header, values) = Profile::split_header_and_values(src).chain_err(
-            || "Unable to split header values.",
-        )?;
-        let cols = Profile::get_column_indexes(header).chain_err(
-            || "Unable to parse column indexes.",
-        )?;
+        let (header, values) =
+            Profile::split_header_and_values(src).chain_err(|| "Unable to split header values.")?;
+        let cols =
+            Profile::get_column_indexes(header).chain_err(|| "Unable to parse column indexes.")?;
         Profile::parse_values(values, &cols)
     }
 
     /// Split the section into the header and values.
     fn split_header_and_values(src: &str) -> Result<(&str, &str)> {
         // Find the end of the header, and split into header and values.
-        let header_end = src.find(|c| c == '-' || char::is_digit(c, 10)).ok_or_else(
-            || {
-                Error::from("Unable to split profile header from values.")
-            },
-        )?;
+        let header_end = src.find(|c| c == '-' || char::is_digit(c, 10))
+            .ok_or_else(|| Error::from("Unable to split profile header from values."))?;
         Ok(src.split_at(header_end))
     }
 
@@ -201,10 +195,9 @@ mod test {
         assert_eq!(
             values,
             "906.70 10.54 6.12 1.52 305.69 270.00 2.14 -2.00 994.01 \
-                901.50 10.04 5.79 1.32 305.54 274.76 2.33 -2.00 1041.87"
+             901.50 10.04 5.79 1.32 305.54 274.76 2.33 -2.00 1041.87"
         );
     }
-
 
     #[test]
     fn test_get_column_indexes() {

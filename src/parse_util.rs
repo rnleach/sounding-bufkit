@@ -1,6 +1,6 @@
 //! Utilites for parsing a sounding.
 
-use chrono::{NaiveDateTime, NaiveDate};
+use chrono::{NaiveDate, NaiveDateTime};
 use error::*;
 
 /// Isolate a value into a sub-string for further parsing.
@@ -20,13 +20,11 @@ where
     FS: Fn(char) -> bool,
     FE: Fn(char) -> bool,
 {
-    let mut idx = src.find(key).ok_or_else(
-        || Error::from("Unable to find key."),
-    )?;
+    let mut idx = src.find(key)
+        .ok_or_else(|| Error::from("Unable to find key."))?;
     let mut head = &src[idx..];
-    idx = head.find(start_val).ok_or_else(
-        || Error::from("Unable to find value."),
-    )?;
+    idx = head.find(start_val)
+        .ok_or_else(|| Error::from("Unable to find value."))?;
     head = &head[idx..];
     // When finding the end of the value, you may go all the way to the end of the slice.
     // If so, find returns None, just convert that into the end of the slice.
@@ -80,9 +78,12 @@ fn test_parse_kv() {
 pub fn parse_f64<'a, 'b>(src: &'a str, key: &'b str) -> Result<(f64, &'a str)> {
     use std::str::FromStr;
 
-    let (val_to_parse, head) = parse_kv(src, key, |c| char::is_digit(c, 10) || c == '-', |c| {
-        !(char::is_digit(c, 10) || c == '.' || c == '-')
-    })?;
+    let (val_to_parse, head) = parse_kv(
+        src,
+        key,
+        |c| char::is_digit(c, 10) || c == '-',
+        |c| !(char::is_digit(c, 10) || c == '.' || c == '-'),
+    )?;
     let val = f64::from_str(val_to_parse)?;
     Ok((val, head))
 }
@@ -159,11 +160,7 @@ pub fn parse_naive_date_time(src: &str) -> Result<NaiveDateTime> {
     let day = u32::from_str(&val_to_parse[4..6])?;
     let hour = u32::from_str(&val_to_parse[7..9])?;
     let minute = u32::from_str(&val_to_parse[9..11])?;
-    Ok(NaiveDate::from_ymd(year, month, day).and_hms(
-        hour,
-        minute,
-        0,
-    ))
+    Ok(NaiveDate::from_ymd(year, month, day).and_hms(hour, minute, 0))
 }
 
 #[test]
@@ -183,7 +180,6 @@ pub fn find_blank_line(src: &str) -> Option<usize> {
 
     let mut iter = src.char_indices().peekable();
     loop {
-
         let next = iter.next();
         if next.is_none() {
             return None;

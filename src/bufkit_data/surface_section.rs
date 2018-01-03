@@ -1,7 +1,7 @@
 //! Deals with the text and parsing of the surface section in a bufkit file.
 
 use error::*;
-use bufkit_data::surface::{SurfaceData, SfcColumns};
+use bufkit_data::surface::{SfcColumns, SurfaceData};
 
 /// Represents the section of a string that represents surface data in a bufkit file.
 pub struct SurfaceSection<'a> {
@@ -12,7 +12,6 @@ pub struct SurfaceSection<'a> {
 impl<'a> SurfaceSection<'a> {
     /// Create a new SurfaceSection.
     pub fn new(text: &'a str) -> Result<SurfaceSection<'a>> {
-
         // Split the header off
         let mut header_end: usize = 0;
         let mut previous_char = 'x';
@@ -34,9 +33,8 @@ impl<'a> SurfaceSection<'a> {
         let header = &text[0..header_end].trim();
 
         // Parse the column headers
-        let cols = SurfaceData::parse_columns(header).chain_err(
-            || "Unable to parse column headers.",
-        )?;
+        let cols =
+            SurfaceData::parse_columns(header).chain_err(|| "Unable to parse column headers.")?;
 
         Ok(SurfaceSection {
             raw_text: text[header_end..].trim(),
@@ -49,13 +47,11 @@ impl<'a> SurfaceSection<'a> {
         let mut iter = self.into_iter();
 
         loop {
-            let opt = iter.get_next_chunk().chain_err(
-                || "Error getting chunk of surface data.",
-            )?;
+            let opt = iter.get_next_chunk()
+                .chain_err(|| "Error getting chunk of surface data.")?;
             if let Some(chunk) = opt {
-                SurfaceData::parse_values(chunk, iter.columns).chain_err(
-                    || "Error parsing chunk of surface data.",
-                )?;
+                SurfaceData::parse_values(chunk, iter.columns)
+                    .chain_err(|| "Error parsing chunk of surface data.")?;
             } else {
                 break;
             }
@@ -217,7 +213,7 @@ mod test {
 
     #[test]
     fn test_surface_through_iterator() {
-        use chrono::{NaiveDateTime, NaiveDate};
+        use chrono::{NaiveDate, NaiveDateTime};
         let test_data = get_valid_test_data();
 
         let surface_section = SurfaceSection::new(test_data).unwrap();
@@ -296,7 +292,6 @@ mod test {
 
     #[test]
     fn test_validate() {
-
         let surface_section = SurfaceSection::new(get_valid_test_data()).unwrap();
         assert!(surface_section.validate_section().is_ok());
 

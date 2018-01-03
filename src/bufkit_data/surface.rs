@@ -1,12 +1,12 @@
 //! Module for parsing surface data in a bufkit file.
 
-use chrono::{NaiveDateTime, NaiveDate};
+use chrono::{NaiveDate, NaiveDateTime};
 use error::*;
 
 /// Surface data.
 #[derive(Debug, PartialEq)]
 pub struct SurfaceData {
-    pub station_num: i32, // Same is in StationInfo
+    pub station_num: i32,          // Same is in StationInfo
     pub valid_time: NaiveDateTime, // Always assume UTC.
     pub mslp: f64, // Surface pressure reduce to mean sea level (mb or hPa, the same)
     pub station_pres: f64, // Surface pressure
@@ -27,7 +27,9 @@ impl SurfaceData {
 
         let cols_text = header.trim().split_whitespace();
 
-        let mut cols = SfcColumns { names: Vec::with_capacity(33) };
+        let mut cols = SfcColumns {
+            names: Vec::with_capacity(33),
+        };
 
         for val in cols_text {
             match val.trim() {
@@ -47,8 +49,8 @@ impl SurfaceData {
         // Check that we found some required columns.
         {
             let names: &Vec<_> = &cols.names;
-            if names.iter().find(|&&x| x == STN).is_none() ||
-                names.iter().find(|&&x| x == VALIDTIME).is_none()
+            if names.iter().find(|&&x| x == STN).is_none()
+                || names.iter().find(|&&x| x == VALIDTIME).is_none()
             {
                 return Err(Error::from("Missing required column in surface data."));
             }
@@ -82,7 +84,6 @@ impl SurfaceData {
                     UWND => sd.uwind = f64::from_str(token)?,
                     VWND => sd.vwind = f64::from_str(token)?,
                 };
-
             } else {
                 return Err(Error::from("Not enough tokens for a full row."));
             }

@@ -1,4 +1,3 @@
-
 //! Parses the string representing the upper air indexes from a bufkit file.
 
 use error::*;
@@ -7,7 +6,7 @@ use error::*;
 #[derive(Debug)]
 pub struct Indexes {
     pub show: f64, // Showalter index
-    pub li: f64, // Lifted index
+    pub li: f64,   // Lifted index
     pub swet: f64, // Severe Weather Threat index
     pub kinx: f64, // K-index
     pub lclp: f64, // Lifting Condensation Level (hPa)
@@ -17,7 +16,7 @@ pub struct Indexes {
     pub lclt: f64, // Temperature at LCL (K)
     pub cins: f64, // Convective Inhibitive Energy
     pub eqlv: f64, // Equilibrium Level (hPa)
-    pub lfc: f64, // Level of Free Convection (hPa)
+    pub lfc: f64,  // Level of Free Convection (hPa)
     pub brch: f64, // Bulk Richardson Number
 }
 

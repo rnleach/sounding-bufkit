@@ -7,12 +7,12 @@ mod surface_section;
 mod upper_air;
 mod surface;
 
-use sounding_base::{Sounding, OptionVal};
+use sounding_base::{OptionVal, Sounding};
 
 use self::surface::SurfaceData;
-use self::surface_section::{SurfaceSection, SurfaceIterator};
+use self::surface_section::{SurfaceIterator, SurfaceSection};
 use self::upper_air::UpperAir;
-use self::upper_air_section::{UpperAirSection, UpperAirIterator};
+use self::upper_air_section::{UpperAirIterator, UpperAirSection};
 use error::*;
 
 /// Hold an entire bufkit file in memory.
@@ -30,21 +30,20 @@ impl BufkitFile {
         // Load the file contents
         let mut file = BufReader::new(File::open(path).chain_err(|| "Unable to opend file.")?);
         let mut contents = String::new();
-        file.read_to_string(&mut contents).chain_err(
-            || "Unable to read file.",
-        )?;
+        file.read_to_string(&mut contents)
+            .chain_err(|| "Unable to read file.")?;
 
-        Ok(BufkitFile { file_text: contents })
+        Ok(BufkitFile {
+            file_text: contents,
+        })
     }
 
     /// Validate the whole file, ensure it is parseable and do some sanity checks.
     pub fn validate_file_format(&self) -> Result<()> {
-        let data = self.data().chain_err(
-            || "Unable to split upper air and surface sections.",
-        )?;
-        data.validate().chain_err(
-            || "Failed validation of file format.",
-        )?;
+        let data = self.data()
+            .chain_err(|| "Unable to split upper air and surface sections.")?;
+        data.validate()
+            .chain_err(|| "Failed validation of file format.")?;
 
         Ok(())
     }
@@ -67,12 +66,12 @@ pub struct BufkitData<'a> {
 impl<'a> BufkitData<'a> {
     /// Validate the whole string, ensure it is parseable and do some sanity checks.
     pub fn validate(&self) -> Result<()> {
-        self.upper_air.validate_section().chain_err(
-            || "Failed upper air section.",
-        )?;
-        self.surface.validate_section().chain_err(
-            || "Failed surface section.",
-        )?;
+        self.upper_air
+            .validate_section()
+            .chain_err(|| "Failed upper air section.")?;
+        self.surface
+            .validate_section()
+            .chain_err(|| "Failed surface section.")?;
         Ok(())
     }
 
@@ -85,9 +84,8 @@ impl<'a> BufkitData<'a> {
     fn new_with_break_point(text: &str, break_point: usize) -> Result<BufkitData> {
         Ok(BufkitData {
             upper_air: UpperAirSection::new(&text[0..break_point]),
-            surface: SurfaceSection::new(&text[break_point..]).chain_err(
-                || "Unable to get surface section.",
-            )?,
+            surface: SurfaceSection::new(&text[break_point..])
+                .chain_err(|| "Unable to get surface section.")?,
         })
     }
 
@@ -114,7 +112,6 @@ impl<'a> IntoIterator for &'a BufkitData<'a> {
 }
 
 fn combine_data(ua: &UpperAir, sd: &SurfaceData) -> Sounding {
-
     use sounding_base::Profile::*;
     use sounding_base::Index::*;
     use sounding_base::Surface::*;
