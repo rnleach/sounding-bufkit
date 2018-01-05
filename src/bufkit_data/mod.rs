@@ -7,7 +7,7 @@ mod surface_section;
 mod upper_air;
 mod surface;
 
-use sounding_base::{OptionVal, Sounding};
+use sounding_base::Sounding;
 
 use self::surface::SurfaceData;
 use self::surface_section::{SurfaceIterator, SurfaceSection};
@@ -139,25 +139,25 @@ fn combine_data(ua: &UpperAir, sd: &SurfaceData) -> Sounding {
 
         // Upper air
         .set_profile(Pressure,
-            ua.pressure.iter().map(|val| OptionVal::from(*val)).collect::<Vec<_>>())
+            ua.pressure.iter().map(|val| Option::from(*val)).collect::<Vec<_>>())
         .set_profile(Temperature,
-            ua.temperature.iter().map(|val| OptionVal::from(*val)).collect::<Vec<_>>())
+            ua.temperature.iter().map(|val| Option::from(*val)).collect::<Vec<_>>())
         .set_profile(WetBulb,
-            ua.wet_bulb.iter().map(|val| OptionVal::from(*val)).collect::<Vec<_>>())
+            ua.wet_bulb.iter().map(|val| Option::from(*val)).collect::<Vec<_>>())
         .set_profile(DewPoint,
-            ua.dew_point.iter().map(|val| OptionVal::from(*val)).collect::<Vec<_>>())
+            ua.dew_point.iter().map(|val| Option::from(*val)).collect::<Vec<_>>())
         .set_profile(ThetaE,
-            ua.theta_e.iter().map(|val| OptionVal::from(*val)).collect::<Vec<_>>())
+            ua.theta_e.iter().map(|val| Option::from(*val)).collect::<Vec<_>>())
         .set_profile(WindDirection,
-            ua.direction.iter().map(|val| OptionVal::from(*val)).collect::<Vec<_>>())
+            ua.direction.iter().map(|val| Option::from(*val)).collect::<Vec<_>>())
         .set_profile(WindSpeed,
-            ua.speed.iter().map(|val| OptionVal::from(*val)).collect::<Vec<_>>())
+            ua.speed.iter().map(|val| Option::from(*val)).collect::<Vec<_>>())
         .set_profile(PressureVerticalVelocity,
-            ua.omega.iter().map(|val| OptionVal::from(*val)).collect::<Vec<_>>())
+            ua.omega.iter().map(|val| Option::from(*val)).collect::<Vec<_>>())
         .set_profile(GeopotentialHeight,
-            ua.height.iter().map(|val| OptionVal::from(*val)).collect::<Vec<_>>())
+            ua.height.iter().map(|val| Option::from(*val)).collect::<Vec<_>>())
         .set_profile(CloudFraction,
-            ua.cloud_fraction.iter().map(|val| OptionVal::from(*val)).collect::<Vec<_>>())
+            ua.cloud_fraction.iter().map(|val| Option::from(*val)).collect::<Vec<_>>())
 
         // Surface data
         .set_surface_value(MSLP, sd.mslp)
