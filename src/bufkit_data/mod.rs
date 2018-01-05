@@ -116,57 +116,71 @@ fn combine_data(ua: &UpperAir, sd: &SurfaceData) -> Sounding {
     use sounding_base::Index::*;
     use sounding_base::Surface::*;
 
+    // Missing or no data values used in Bufkit files
+    const MISSING_I32: i32 = -9999;
+    const MISSING_F64: f64 = -9999.0;
+
+    #[inline(always)]
+    fn check_missing(val: f64) -> Option<f64> {
+        if val == MISSING_F64 { None } else { Some(val)}
+    }
+
+    #[inline(always)]
+    fn check_missing_i32(val: i32) -> Option<i32> {
+        if val == MISSING_I32 { None } else { Some(val)}
+    }
+
     Sounding::new()
-        .set_station_num(ua.num)
+        .set_station_num(check_missing_i32(ua.num))
         .set_valid_time(ua.valid_time)
-        .set_lead_time(ua.lead_time)
-        .set_location(ua.lat, ua.lon, ua.elevation)
+        .set_lead_time(check_missing_i32(ua.lead_time))
+        .set_location(check_missing(ua.lat), check_missing(ua.lon), check_missing(ua.elevation))
 
         // Indexes
-        .set_index(Showalter,ua.show)
-        .set_index(LI, ua.li)
-        .set_index(SWeT, ua.swet)
-        .set_index(K, ua.kinx)
-        .set_index(LCL, ua.lclp)
-        .set_index(PWAT, ua.pwat)
-        .set_index(TotalTotals, ua.totl)
-        .set_index(CAPE, ua.cape)
-        .set_index(LCLTemperature, ua.lclt)
-        .set_index(CIN, ua.cins)
-        .set_index(EquilibrimLevel, ua.eqlv)
-        .set_index(LFC, ua.lfc)
-        .set_index(BulkRichardsonNumber, ua.brch)
+        .set_index(Showalter,check_missing(ua.show))
+        .set_index(LI, check_missing(ua.li))
+        .set_index(SWeT, check_missing(ua.swet))
+        .set_index(K, check_missing(ua.kinx))
+        .set_index(LCL, check_missing(ua.lclp))
+        .set_index(PWAT, check_missing(ua.pwat))
+        .set_index(TotalTotals, check_missing(ua.totl))
+        .set_index(CAPE, check_missing(ua.cape))
+        .set_index(LCLTemperature, check_missing(ua.lclt))
+        .set_index(CIN, check_missing(ua.cins))
+        .set_index(EquilibrimLevel, check_missing(ua.eqlv))
+        .set_index(LFC, check_missing(ua.lfc))
+        .set_index(BulkRichardsonNumber, check_missing(ua.brch))
 
         // Upper air
         .set_profile(Pressure,
-            ua.pressure.iter().map(|val| Option::from(*val)).collect::<Vec<_>>())
+            ua.pressure.iter().map(|val| check_missing(*val)).collect::<Vec<_>>())
         .set_profile(Temperature,
-            ua.temperature.iter().map(|val| Option::from(*val)).collect::<Vec<_>>())
+            ua.temperature.iter().map(|val| check_missing(*val)).collect::<Vec<_>>())
         .set_profile(WetBulb,
-            ua.wet_bulb.iter().map(|val| Option::from(*val)).collect::<Vec<_>>())
+            ua.wet_bulb.iter().map(|val| check_missing(*val)).collect::<Vec<_>>())
         .set_profile(DewPoint,
-            ua.dew_point.iter().map(|val| Option::from(*val)).collect::<Vec<_>>())
+            ua.dew_point.iter().map(|val| check_missing(*val)).collect::<Vec<_>>())
         .set_profile(ThetaE,
-            ua.theta_e.iter().map(|val| Option::from(*val)).collect::<Vec<_>>())
+            ua.theta_e.iter().map(|val| check_missing(*val)).collect::<Vec<_>>())
         .set_profile(WindDirection,
-            ua.direction.iter().map(|val| Option::from(*val)).collect::<Vec<_>>())
+            ua.direction.iter().map(|val| check_missing(*val)).collect::<Vec<_>>())
         .set_profile(WindSpeed,
-            ua.speed.iter().map(|val| Option::from(*val)).collect::<Vec<_>>())
+            ua.speed.iter().map(|val| check_missing(*val)).collect::<Vec<_>>())
         .set_profile(PressureVerticalVelocity,
-            ua.omega.iter().map(|val| Option::from(*val)).collect::<Vec<_>>())
+            ua.omega.iter().map(|val| check_missing(*val)).collect::<Vec<_>>())
         .set_profile(GeopotentialHeight,
-            ua.height.iter().map(|val| Option::from(*val)).collect::<Vec<_>>())
+            ua.height.iter().map(|val| check_missing(*val)).collect::<Vec<_>>())
         .set_profile(CloudFraction,
-            ua.cloud_fraction.iter().map(|val| Option::from(*val)).collect::<Vec<_>>())
+            ua.cloud_fraction.iter().map(|val| check_missing(*val)).collect::<Vec<_>>())
 
         // Surface data
-        .set_surface_value(MSLP, sd.mslp)
-        .set_surface_value(StationPressure, sd.station_pres)
-        .set_surface_value(LowCloud, sd.low_cloud)
-        .set_surface_value(MidCloud, sd.mid_cloud)
-        .set_surface_value(HighCloud, sd.hi_cloud)
-        .set_surface_value(UWind, sd.uwind)
-        .set_surface_value(VWind, sd.vwind)
+        .set_surface_value(MSLP, check_missing(sd.mslp))
+        .set_surface_value(StationPressure, check_missing(sd.station_pres))
+        .set_surface_value(LowCloud, check_missing(sd.low_cloud))
+        .set_surface_value(MidCloud, check_missing(sd.mid_cloud))
+        .set_surface_value(HighCloud, check_missing(sd.hi_cloud))
+        .set_surface_value(UWind, check_missing(sd.uwind))
+        .set_surface_value(VWind, check_missing(sd.vwind))
 }
 
 /// Iterator type for `BufkitData` that returns a `Sounding`.
