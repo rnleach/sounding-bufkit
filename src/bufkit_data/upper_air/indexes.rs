@@ -21,7 +21,7 @@ pub struct Indexes {
 }
 
 impl Indexes {
-    pub fn parse(src: &str) -> Result<Indexes> {
+    pub fn parse(src: &str) -> Result<Indexes, BufkitFileError> {
         // This method assumes that these values are ALWAYS in this order. If it turns out that
         // they are not, it will probably error by using a default value, which is the missing
         // value! The easy fix would be to replace head with src in all of the parse_f64 function

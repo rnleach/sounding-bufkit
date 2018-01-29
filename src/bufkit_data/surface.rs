@@ -22,7 +22,7 @@ impl SurfaceData {
     ///
     /// This function does not match all possible column names. Much more work would need to be
     /// done for that, but there are some relavent links in the bufkit_parameters.txt file.
-    pub fn parse_columns(header: &str) -> Result<SfcColumns> {
+    pub fn parse_columns(header: &str) -> Result<SfcColumns, BufkitFileError> {
         use self::SfcColName::*;
 
         let cols_text = header.trim().split_whitespace();
@@ -52,7 +52,7 @@ impl SurfaceData {
             if names.iter().find(|&&x| x == STN).is_none()
                 || names.iter().find(|&&x| x == VALIDTIME).is_none()
             {
-                return Err(Error::from("Missing required column in surface data."));
+                return Err(BufkitFileError::new());
             }
         }
 
@@ -60,7 +60,7 @@ impl SurfaceData {
     }
 
     /// Parse a few values stored as strings in the `tokens` iterator.
-    pub fn parse_values(tokens: &str, cols: &SfcColumns) -> Result<SurfaceData> {
+    pub fn parse_values(tokens: &str, cols: &SfcColumns) -> Result<SurfaceData, Error> {
         use std::str::FromStr;
         let mut tokens = tokens.split_whitespace();
 
@@ -85,7 +85,7 @@ impl SurfaceData {
                     VWND => sd.vwind = f64::from_str(token)?,
                 };
             } else {
-                return Err(Error::from("Not enough tokens for a full row."));
+                return Err(BufkitFileError::new().into());
             }
         }
 

@@ -1,6 +1,6 @@
 [package]
 name = "sounding-bufkit"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Ryan Leach <clumsycodemonkey@gmail.com>"]
 description = """Library to parse and load Bufkit sounding files."""
 repository = "https://github.com/rnleach/sounding-bufkit.git"
@@ -9,7 +9,11 @@ license-file = "LICENSE"
 exclude = ["**/*.rs.bk",".gitignore",".vscode/**/*", "tests/**/*", "example_data/**/*", "bufkit_parameters.txt"]
 
 [dependencies]
-sounding-base = "^0.2.0"
-sounding-validate = "^0.2.0"
+sounding-base = "^0.3.0"
+sounding-validate = "^0.3.0"
 chrono="^0.4"
-error-chain = "^0.11"
+failure = "0.1.1"
+
+[patch.crates-io]
+sounding-base = {version="0.3", git = "https://github.com/rnleach/sounding-base.git" }
+sounding-validate = {version="0.3", git = "https://github.com/rnleach/sounding-validate.git" }

@@ -1,4 +1,5 @@
 //! Utilites for parsing a sounding.
+use failure::Error;
 
 use chrono::{NaiveDate, NaiveDateTime};
 use error::*;
@@ -15,16 +16,16 @@ pub fn parse_kv<'a, 'b, FS, FE>(
     key: &'b str,
     start_val: FS,
     end_val: FE,
-) -> Result<(&'a str, &'a str)>
+) -> Result<(&'a str, &'a str), BufkitFileError>
 where
     FS: Fn(char) -> bool,
     FE: Fn(char) -> bool,
 {
     let mut idx = src.find(key)
-        .ok_or_else(|| Error::from("Unable to find key."))?;
+        .ok_or_else(|| BufkitFileError::new())?;
     let mut head = &src[idx..];
     idx = head.find(start_val)
-        .ok_or_else(|| Error::from("Unable to find value."))?;
+        .ok_or_else(|| BufkitFileError::new())?;
     head = &head[idx..];
     // When finding the end of the value, you may go all the way to the end of the slice.
     // If so, find returns None, just convert that into the end of the slice.
@@ -75,7 +76,7 @@ fn test_parse_kv() {
 }
 
 /// Parse an f64 value.
-pub fn parse_f64<'a, 'b>(src: &'a str, key: &'b str) -> Result<(f64, &'a str)> {
+pub fn parse_f64<'a, 'b>(src: &'a str, key: &'b str) -> Result<(f64, &'a str), Error> {
     use std::str::FromStr;
 
     let (val_to_parse, head) = parse_kv(
@@ -112,7 +113,7 @@ fn test_parse_f64() {
 }
 
 /// Parse an i32 value.
-pub fn parse_i32<'a, 'b>(src: &'a str, key: &'b str) -> Result<(i32, &'a str)> {
+pub fn parse_i32<'a, 'b>(src: &'a str, key: &'b str) -> Result<(i32, &'a str), Error> {
     use std::str::FromStr;
 
     let (val_to_parse, head) = parse_kv(
@@ -150,7 +151,7 @@ fn test_parse_i32() {
 
 #[cfg_attr(feature = "cargo-clippy", allow(doc_markdown))]
 /// Parse a string of the form "YYmmdd/hhMM" to a `NaiveDateTime`.
-pub fn parse_naive_date_time(src: &str) -> Result<NaiveDateTime> {
+pub fn parse_naive_date_time(src: &str) -> Result<NaiveDateTime, Error> {
     use std::str::FromStr;
 
     let val_to_parse = src.trim();
@@ -231,7 +232,7 @@ fn test_find_blank_line() {
 }
 
 /// In a list of white space delimited floating point values, find a string with `n` values.
-pub fn find_next_n_tokens(src: &str, n: usize) -> Result<Option<usize>> {
+pub fn find_next_n_tokens(src: &str, n: usize) -> Result<Option<usize>, BufkitFileError> {
     if src.trim().is_empty() {
         return Ok(None);
     }
@@ -264,7 +265,7 @@ pub fn find_next_n_tokens(src: &str, n: usize) -> Result<Option<usize>> {
 
     // Invalid number of tokens
     if token_count > 0 {
-        return Err(Error::from("Invalid number of tokens."));
+        return Err(BufkitFileError::new());
     }
     // Out of tokens
     Ok(None)

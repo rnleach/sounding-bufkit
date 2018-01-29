@@ -2,10 +2,8 @@
 //! Library to load, parse, validate, and iterate over [Bufkit][1] files.
 //!
 //! [1]: http://www.wdtb.noaa.gov/tools/BUFKIT/
-#![recursion_limit = "1024"]
 extern crate chrono;
-#[macro_use]
-extern crate error_chain;
+extern crate failure;
 
 extern crate sounding_base;
 

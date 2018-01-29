@@ -22,16 +22,15 @@ pub struct BufkitFile {
 
 impl BufkitFile {
     /// Load a file into memory.
-    pub fn load(path: &Path) -> Result<BufkitFile> {
+    pub fn load(path: &Path) -> Result<BufkitFile, Error> {
         use std::fs::File;
         use std::io::BufReader;
         use std::io::prelude::Read;
 
         // Load the file contents
-        let mut file = BufReader::new(File::open(path).chain_err(|| "Unable to opend file.")?);
+        let mut file = BufReader::new(File::open(path)?);
         let mut contents = String::new();
-        file.read_to_string(&mut contents)
-            .chain_err(|| "Unable to read file.")?;
+        file.read_to_string(&mut contents)?;
 
         Ok(BufkitFile {
             file_text: contents,
@@ -39,17 +38,15 @@ impl BufkitFile {
     }
 
     /// Validate the whole file, ensure it is parseable and do some sanity checks.
-    pub fn validate_file_format(&self) -> Result<()> {
-        let data = self.data()
-            .chain_err(|| "Unable to split upper air and surface sections.")?;
-        data.validate()
-            .chain_err(|| "Failed validation of file format.")?;
+    pub fn validate_file_format(&self) -> Result<(), Error> {
+        let data = self.data()?;
+        data.validate()?;
 
         Ok(())
     }
 
     /// Get a bufkit data object from this file.
-    pub fn data(&self) -> Result<BufkitData> {
+    pub fn data(&self) -> Result<BufkitData, Error> {
         BufkitData::new(&self.file_text)
     }
 }
@@ -65,35 +62,29 @@ pub struct BufkitData<'a> {
 
 impl<'a> BufkitData<'a> {
     /// Validate the whole string, ensure it is parseable and do some sanity checks.
-    pub fn validate(&self) -> Result<()> {
-        self.upper_air
-            .validate_section()
-            .chain_err(|| "Failed upper air section.")?;
-        self.surface
-            .validate_section()
-            .chain_err(|| "Failed surface section.")?;
+    pub fn validate(&self) -> Result<(), Error> {
+        self.upper_air.validate_section()?;
+        self.surface.validate_section()?;
         Ok(())
     }
 
     /// Create a new data representation from a string
-    pub fn new(text: &str) -> Result<BufkitData> {
+    pub fn new(text: &str) -> Result<BufkitData, Error> {
         let break_point = BufkitData::find_break_point(text)?;
-        BufkitData::new_with_break_point(text, break_point)
+        let data = BufkitData::new_with_break_point(text, break_point)?;
+        Ok(data)
     }
 
-    fn new_with_break_point(text: &str, break_point: usize) -> Result<BufkitData> {
+    fn new_with_break_point(text: &str, break_point: usize) -> Result<BufkitData, BufkitFileError> {
         Ok(BufkitData {
             upper_air: UpperAirSection::new(&text[0..break_point]),
-            surface: SurfaceSection::new(&text[break_point..])
-                .chain_err(|| "Unable to get surface section.")?,
+            surface: SurfaceSection::new(&text[break_point..])?,
         })
     }
 
-    fn find_break_point(text: &str) -> Result<usize> {
+    fn find_break_point(text: &str) -> Result<usize, BufkitFileError> {
         match text.find("STN YYMMDD/HHMM") {
-            None => Err(Error::from(
-                "Unable to find break between surface and upper air data.",
-            )),
+            None => Err(BufkitFileError::new()),
             Some(val) => Ok(val),
         }
     }

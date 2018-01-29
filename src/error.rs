@@ -1,14 +1,38 @@
-#![allow(missing_docs, unused_doc_comment)]
-//! Error types for the sounding crate.
-use std::num;
+//! Errors specific to the sounding-bufkit crate.
+use std::fmt::{Display, Formatter, Result};
 
-error_chain!{
-    foreign_links {
-        // Links to std errors
-        Io(::std::io::Error);
+use failure::{Fail, Backtrace};
 
-        // Links to num crate parse errors
-        ParseInt(num::ParseIntError);
-        ParseFloat(num::ParseFloatError);
+pub use failure::Error;
+
+/// Basic error originating in this crate with a backtrace.
+#[derive(Debug)]
+pub struct BufkitFileError {
+    backtrace: Backtrace,
+}
+
+impl BufkitFileError {
+    /// Createa new BufkitFileError.
+    pub fn new() -> BufkitFileError{
+        BufkitFileError{backtrace: Backtrace::new() }
+    }
+}
+
+impl Display for BufkitFileError {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        writeln!(f, "Error parsing bufkit file.")?;
+        write!(f, "{}", self.backtrace)
+    }
+}
+
+impl Fail for BufkitFileError {
+    fn backtrace(&self) -> Option<&Backtrace> {
+        Some(&self.backtrace)
+    }
+}
+
+impl Default for BufkitFileError {
+    fn default()->Self {
+        BufkitFileError::new()
     }
 }

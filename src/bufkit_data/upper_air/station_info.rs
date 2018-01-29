@@ -17,7 +17,7 @@ pub struct StationInfo {
 
 impl StationInfo {
     /// Given a String or slice of characters, parse them into a StationInfo struct.
-    pub fn parse(src: &str) -> Result<StationInfo> {
+    pub fn parse(src: &str) -> Result<StationInfo, Error> {
         // This method assumes that these values are ALWAYS in this order. If it turns out that
         // they are not, it will probably error! The easy fix would be to replace head with src
         // in all of the parse_* function calls below, at the expense of a probably slower parsing
@@ -34,7 +34,7 @@ impl StationInfo {
         use parse_util::{parse_kv, parse_naive_date_time, parse_f64, parse_i32};
 
         // Get station num
-        let (station_num, head) = parse_i32(src, "STNM").chain_err(|| "Unable to parse STNM")?;
+        let (station_num, head) = parse_i32(src, "STNM")?;
 
         // Get valid time
         let (val_to_parse, head) = parse_kv(
@@ -42,19 +42,19 @@ impl StationInfo {
             "TIME",
             |c| char::is_digit(c, 10),
             |c| !(char::is_digit(c, 10) || c == '/'),
-        ).chain_err(|| "Unable to find time string.")?;
+        )?;
 
-        let vt = parse_naive_date_time(val_to_parse).chain_err(|| "Unable to parse time.")?;
+        let vt = parse_naive_date_time(val_to_parse)?;
 
         // get latitude, longitude, and elevation
-        let (lat, head) = parse_f64(head, "SLAT").chain_err(|| "Unable to parse SLAT")?;
+        let (lat, head) = parse_f64(head, "SLAT")?;
 
-        let (lon, head) = parse_f64(head, "SLON").chain_err(|| "Unable to parse SLON")?;
+        let (lon, head) = parse_f64(head, "SLON")?;
 
-        let (elv, head) = parse_f64(head, "SELV").chain_err(|| "Unable to parse SELV")?;
+        let (elv, head) = parse_f64(head, "SELV")?;
 
         // get the lead time
-        let (lt, _) = parse_i32(head, "STIM").chain_err(|| "Unable to parse STIM")?;
+        let (lt, _) = parse_i32(head, "STIM")?;
 
         Ok(StationInfo {
             num: station_num,

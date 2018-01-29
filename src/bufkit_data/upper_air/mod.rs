@@ -48,24 +48,23 @@ pub struct UpperAir {
 
 impl UpperAir {
     /// Given a string slice, attempt to parse it into a UpperAir.
-    pub fn parse(text: &str) -> Result<UpperAir> {
+    pub fn parse(text: &str) -> Result<UpperAir, Error> {
         use parse_util::find_blank_line;
         use self::station_info::StationInfo;
         use self::indexes::Indexes;
         use self::profile::Profile;
 
         let mut break_point = find_blank_line(text)
-            .ok_or_else(|| Error::from("Unable to find station info section."))?;
+            .ok_or_else(|| BufkitFileError::new())?;
         let (station_info_section, the_rest) = text.split_at(break_point);
 
         break_point = find_blank_line(the_rest)
-            .ok_or_else(|| Error::from("Unable to find split index and upper air sections."))?;
+            .ok_or_else(|| BufkitFileError::new())?;
         let (index_section, upper_air_section) = the_rest.split_at(break_point);
 
-        let station_info =
-            StationInfo::parse(station_info_section).chain_err(|| "Error parsing station info.")?;
-        let indexes = Indexes::parse(index_section).chain_err(|| "Error parsing indexes.")?;
-        let upper_air = Profile::parse(upper_air_section).chain_err(|| "Error parsing profile.")?;
+        let station_info = StationInfo::parse(station_info_section)?;
+        let indexes = Indexes::parse(index_section)?;
+        let upper_air = Profile::parse(upper_air_section)?;
 
         Ok(UpperAir {
             // Station info
@@ -106,35 +105,30 @@ impl UpperAir {
     }
 
     /// Validate the sounding
-    pub fn validate(&self) -> Result<()> {
+    pub fn validate(&self) -> Result<(), BufkitFileError> {
         // Pressure is mandatory
         let len = self.pressure.len();
         if len == 0 {
-            return Err(Error::from("No pressure data."));
+            return Err(BufkitFileError::new());
         }
 
         let is_valid_length = |l| {
             if l == 0 || l == len {
                 Ok(())
             } else {
-                Err(Error::from(
-                    "Number of values does not match number of pressure levels.",
-                ))
+                Err(BufkitFileError::new())
             }
         };
 
-        is_valid_length(self.temperature.len())
-            .chain_err(|| "Wrong number of temperature values.")?;
-        is_valid_length(self.wet_bulb.len()).chain_err(|| "Wrong number of wet bulb values.")?;
-        is_valid_length(self.dew_point.len()).chain_err(|| "Wrong number of dew point values.")?;
-        is_valid_length(self.theta_e.len()).chain_err(|| "Wrong number of theta-e values.")?;
-        is_valid_length(self.direction.len())
-            .chain_err(|| "Wrong number of wind direction values.")?;
-        is_valid_length(self.speed.len()).chain_err(|| "Wrong number of wind speed values.")?;
-        is_valid_length(self.omega.len()).chain_err(|| "Wrong number of omega values.")?;
-        is_valid_length(self.height.len()).chain_err(|| "Wrong number of height values.")?;
-        is_valid_length(self.cloud_fraction.len())
-            .chain_err(|| "Wrong number of cloud fraction values.")?;
+        is_valid_length(self.temperature.len())?;
+        is_valid_length(self.wet_bulb.len())?;
+        is_valid_length(self.dew_point.len())?;
+        is_valid_length(self.theta_e.len())?;
+        is_valid_length(self.direction.len())?;
+        is_valid_length(self.speed.len())?;
+        is_valid_length(self.omega.len())?;
+        is_valid_length(self.height.len())?;
+        is_valid_length(self.cloud_fraction.len())?;
 
         Ok(())
     }

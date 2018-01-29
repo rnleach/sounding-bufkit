@@ -15,12 +15,12 @@ impl<'a> UpperAirSection<'a> {
     }
 
     /// Validate the upper air section
-    pub fn validate_section(&self) -> Result<()> {
+    pub fn validate_section(&self) -> Result<(), Error> {
         let mut iter = self.into_iter();
 
         while let Some(chunk) = iter.get_next_chunk() {
-            let ua = UpperAir::parse(chunk).chain_err(|| "Chunk failed to parse.")?;
-            ua.validate().chain_err(|| "Chunk failed validation.")?;
+            let ua = UpperAir::parse(chunk)?;
+            ua.validate()?;
         }
         Ok(())
     }

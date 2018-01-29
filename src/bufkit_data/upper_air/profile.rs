@@ -18,24 +18,22 @@ pub struct Profile {
 
 impl Profile {
     /// Given a String or slice of characters, parse them into an Profile struct.
-    pub fn parse(src: &str) -> Result<Profile> {
-        let (header, values) =
-            Profile::split_header_and_values(src).chain_err(|| "Unable to split header values.")?;
-        let cols =
-            Profile::get_column_indexes(header).chain_err(|| "Unable to parse column indexes.")?;
+    pub fn parse(src: &str) -> Result<Profile, Error> {
+        let (header, values) = Profile::split_header_and_values(src)?;
+        let cols = Profile::get_column_indexes(header)?;
         Profile::parse_values(values, &cols)
     }
 
     /// Split the section into the header and values.
-    fn split_header_and_values(src: &str) -> Result<(&str, &str)> {
+    fn split_header_and_values(src: &str) -> Result<(&str, &str), BufkitFileError> {
         // Find the end of the header, and split into header and values.
         let header_end = src.find(|c| c == '-' || char::is_digit(c, 10))
-            .ok_or_else(|| Error::from("Unable to split profile header from values."))?;
+            .ok_or_else(|| BufkitFileError::new())?;
         Ok(src.split_at(header_end))
     }
 
     /// Get the index of each column name, if it exists
-    fn get_column_indexes(header: &str) -> Result<ProfileColIndexes> {
+    fn get_column_indexes(header: &str) -> Result<ProfileColIndexes, BufkitFileError> {
         let cols_text = header.trim().split_whitespace();
 
         let mut cols: ProfileColIndexes = Default::default();
@@ -52,7 +50,7 @@ impl Profile {
                 "OMEG" => cols.names[i] = ColName::OMEG,
                 "CFRL" => cols.names[i] = ColName::CFRL,
                 "HGHT" => cols.names[i] = ColName::HGHT,
-                _ => return Err(Error::from("Unrecognized column in profile header.")),
+                _ => return Err(BufkitFileError::new()),
             }
         }
 
@@ -60,7 +58,7 @@ impl Profile {
     }
 
     /// Given a string slice of values and some column indexes, parse them!
-    fn parse_values(values: &str, cols: &ProfileColIndexes) -> Result<Profile> {
+    fn parse_values(values: &str, cols: &ProfileColIndexes) -> Result<Profile, Error> {
         use std::str::FromStr;
 
         // Current GFS soundings have 64 levels of upper air data (2017)
@@ -85,10 +83,10 @@ impl Profile {
         for (i, text_val) in values.enumerate() {
             use self::ColName::*;
 
-            let val = f64::from_str(text_val).chain_err(|| "unable to parse")?;
+            let val = f64::from_str(text_val)?;
 
             match cols.names[i % num_cols] {
-                NONE => return Err(Error::from("Unrecognized column in profile values.")),
+                NONE => return Err(BufkitFileError::new().into()),
                 PRES => parsed_vals.pressure.push(val),
                 TMPC => parsed_vals.temperature.push(val),
                 TMWC => parsed_vals.wet_bulb.push(val),

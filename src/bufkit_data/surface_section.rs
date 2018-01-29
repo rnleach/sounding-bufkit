@@ -11,7 +11,7 @@ pub struct SurfaceSection<'a> {
 
 impl<'a> SurfaceSection<'a> {
     /// Create a new SurfaceSection.
-    pub fn new(text: &'a str) -> Result<SurfaceSection<'a>> {
+    pub fn new(text: &'a str) -> Result<SurfaceSection<'a>, BufkitFileError> {
         // Split the header off
         let mut header_end: usize = 0;
         let mut previous_char = 'x';
@@ -26,15 +26,13 @@ impl<'a> SurfaceSection<'a> {
             }
         }
         if !found {
-            return Err(Error::from(
-                "Unable to separate header rows from body in SurfaceSection",
-            ));
+            return Err(BufkitFileError::new());
         }
         let header = &text[0..header_end].trim();
 
         // Parse the column headers
         let cols =
-            SurfaceData::parse_columns(header).chain_err(|| "Unable to parse column headers.")?;
+            SurfaceData::parse_columns(header)?;
 
         Ok(SurfaceSection {
             raw_text: text[header_end..].trim(),
@@ -43,15 +41,13 @@ impl<'a> SurfaceSection<'a> {
     }
 
     /// Validate the surface section of a sounding.
-    pub fn validate_section(&self) -> Result<()> {
+    pub fn validate_section(&self) -> Result<(), Error> {
         let mut iter = self.into_iter();
 
         loop {
-            let opt = iter.get_next_chunk()
-                .chain_err(|| "Error getting chunk of surface data.")?;
+            let opt = iter.get_next_chunk()?;
             if let Some(chunk) = opt {
-                SurfaceData::parse_values(chunk, iter.columns)
-                    .chain_err(|| "Error parsing chunk of surface data.")?;
+                SurfaceData::parse_values(chunk, iter.columns)?;
             } else {
                 break;
             }
@@ -81,10 +77,9 @@ pub struct SurfaceIterator<'a> {
 }
 
 impl<'a> SurfaceIterator<'a> {
-    fn get_next_chunk(&mut self) -> Result<Option<&'a str>> {
+    fn get_next_chunk(&mut self) -> Result<Option<&'a str>, BufkitFileError> {
         use parse_util::find_next_n_tokens;
-        if let Some(brk) = find_next_n_tokens(self.remaining, self.columns.num_cols())
-            .chain_err(|| "Unable to find next 'n' tokens.")?
+        if let Some(brk) = find_next_n_tokens(self.remaining, self.columns.num_cols())?
         {
             let next_chunk = &self.remaining[0..brk];
             self.remaining = &self.remaining[brk..];
