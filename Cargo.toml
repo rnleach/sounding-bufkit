@@ -13,7 +13,3 @@ sounding-base = "^0.3.0"
 sounding-validate = "^0.3.0"
 chrono="^0.4"
 failure = "0.1.1"
-
-[patch.crates-io]
-sounding-base = {version="0.3", git = "https://github.com/rnleach/sounding-base.git" }
-sounding-validate = {version="0.3", git = "https://github.com/rnleach/sounding-validate.git" }
