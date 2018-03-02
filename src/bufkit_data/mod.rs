@@ -7,7 +7,7 @@ mod surface_section;
 mod upper_air;
 mod surface;
 
-use sounding_base::Sounding;
+use sounding_base::{Sounding, StationInfo};
 
 use self::surface::SurfaceData;
 use self::surface_section::{SurfaceIterator, SurfaceSection};
@@ -103,9 +103,9 @@ impl<'a> IntoIterator for &'a BufkitData<'a> {
 }
 
 fn combine_data(ua: &UpperAir, sd: &SurfaceData) -> Sounding {
-    use sounding_base::Profile::*;
-    use sounding_base::Index::*;
-    use sounding_base::Surface::*;
+    use sounding_base::Profile;
+    use sounding_base::Index;
+    use sounding_base::Surface;
 
     // Missing or no data values used in Bufkit files
     const MISSING_I32: i32 = -9999;
@@ -121,57 +121,59 @@ fn combine_data(ua: &UpperAir, sd: &SurfaceData) -> Sounding {
         if val == MISSING_I32 { None } else { Some(val)}
     }
 
+    let coords = check_missing(ua.lat).and_then(|lat| check_missing(ua.lon).and_then(|lon| Some((lat,lon))));
+    let station = StationInfo::new_with_values(check_missing_i32(ua.num), coords, check_missing(ua.elevation));
+
     Sounding::new()
-        .set_station_num(check_missing_i32(ua.num))
+        .set_station_info(station)
         .set_valid_time(ua.valid_time)
         .set_lead_time(check_missing_i32(ua.lead_time))
-        .set_location(check_missing(ua.lat), check_missing(ua.lon), check_missing(ua.elevation))
 
         // Indexes
-        .set_index(Showalter,check_missing(ua.show))
-        .set_index(LI, check_missing(ua.li))
-        .set_index(SWeT, check_missing(ua.swet))
-        .set_index(K, check_missing(ua.kinx))
-        .set_index(LCL, check_missing(ua.lclp))
-        .set_index(PWAT, check_missing(ua.pwat))
-        .set_index(TotalTotals, check_missing(ua.totl))
-        .set_index(CAPE, check_missing(ua.cape))
-        .set_index(LCLTemperature, check_missing(ua.lclt))
-        .set_index(CIN, check_missing(ua.cins))
-        .set_index(EquilibrimLevel, check_missing(ua.eqlv))
-        .set_index(LFC, check_missing(ua.lfc))
-        .set_index(BulkRichardsonNumber, check_missing(ua.brch))
+        .set_index(Index::Showalter,check_missing(ua.show))
+        .set_index(Index::LI, check_missing(ua.li))
+        .set_index(Index::SWeT, check_missing(ua.swet))
+        .set_index(Index::K, check_missing(ua.kinx))
+        .set_index(Index::LCL, check_missing(ua.lclp))
+        .set_index(Index::PWAT, check_missing(ua.pwat))
+        .set_index(Index::TotalTotals, check_missing(ua.totl))
+        .set_index(Index::CAPE, check_missing(ua.cape))
+        .set_index(Index::LCLTemperature, check_missing(ua.lclt))
+        .set_index(Index::CIN, check_missing(ua.cins))
+        .set_index(Index::EquilibrimLevel, check_missing(ua.eqlv))
+        .set_index(Index::LFC, check_missing(ua.lfc))
+        .set_index(Index::BulkRichardsonNumber, check_missing(ua.brch))
 
         // Upper air
-        .set_profile(Pressure,
+        .set_profile(Profile::Pressure,
             ua.pressure.iter().map(|val| check_missing(*val)).collect::<Vec<_>>())
-        .set_profile(Temperature,
+        .set_profile(Profile::Temperature,
             ua.temperature.iter().map(|val| check_missing(*val)).collect::<Vec<_>>())
-        .set_profile(WetBulb,
+        .set_profile(Profile::WetBulb,
             ua.wet_bulb.iter().map(|val| check_missing(*val)).collect::<Vec<_>>())
-        .set_profile(DewPoint,
+        .set_profile(Profile::DewPoint,
             ua.dew_point.iter().map(|val| check_missing(*val)).collect::<Vec<_>>())
-        .set_profile(ThetaE,
+        .set_profile(Profile::ThetaE,
             ua.theta_e.iter().map(|val| check_missing(*val)).collect::<Vec<_>>())
-        .set_profile(WindDirection,
+        .set_profile(Profile::WindDirection,
             ua.direction.iter().map(|val| check_missing(*val)).collect::<Vec<_>>())
-        .set_profile(WindSpeed,
+        .set_profile(Profile::WindSpeed,
             ua.speed.iter().map(|val| check_missing(*val)).collect::<Vec<_>>())
-        .set_profile(PressureVerticalVelocity,
+        .set_profile(Profile::PressureVerticalVelocity,
             ua.omega.iter().map(|val| check_missing(*val)).collect::<Vec<_>>())
-        .set_profile(GeopotentialHeight,
+        .set_profile(Profile::GeopotentialHeight,
             ua.height.iter().map(|val| check_missing(*val)).collect::<Vec<_>>())
-        .set_profile(CloudFraction,
+        .set_profile(Profile::CloudFraction,
             ua.cloud_fraction.iter().map(|val| check_missing(*val)).collect::<Vec<_>>())
 
         // Surface data
-        .set_surface_value(MSLP, check_missing(sd.mslp))
-        .set_surface_value(StationPressure, check_missing(sd.station_pres))
-        .set_surface_value(LowCloud, check_missing(sd.low_cloud))
-        .set_surface_value(MidCloud, check_missing(sd.mid_cloud))
-        .set_surface_value(HighCloud, check_missing(sd.hi_cloud))
-        .set_surface_value(UWind, check_missing(sd.uwind))
-        .set_surface_value(VWind, check_missing(sd.vwind))
+        .set_surface_value(Surface::MSLP, check_missing(sd.mslp))
+        .set_surface_value(Surface::StationPressure, check_missing(sd.station_pres))
+        .set_surface_value(Surface::LowCloud, check_missing(sd.low_cloud))
+        .set_surface_value(Surface::MidCloud, check_missing(sd.mid_cloud))
+        .set_surface_value(Surface::HighCloud, check_missing(sd.hi_cloud))
+        .set_surface_value(Surface::UWind, check_missing(sd.uwind))
+        .set_surface_value(Surface::VWind, check_missing(sd.vwind))
 }
 
 /// Iterator type for `BufkitData` that returns a `Sounding`.
