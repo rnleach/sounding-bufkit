@@ -7,6 +7,8 @@ repository = "https://github.com/rnleach/sounding-bufkit.git"
 readme = "README.md"
 license-file = "LICENSE"
 exclude = ["**/*.rs.bk",".gitignore",".vscode/**/*", "tests/**/*", "example_data/**/*", "bufkit_parameters.txt"]
+categories = ["science"]
+keywords = ["weather","sounding","meteorology", "skew-t", "Bufkit"]
 
 [dependencies]
 sounding-base = "^0.3.0"
