@@ -3,8 +3,6 @@
 [![Latest Version](https://img.shields.io/crates/v/sounding-bufkit.svg)](https://crates.io/crates/sounding-bufkit)
 [![docs](https://docs.rs/sounding-bufkit/badge.svg)](https://docs.rs/sounding-bufkit)
 
-# sounding-bufkit
+# {{crate}}
 
-Library to load, parse, validate, and iterate over [Bufkit][1] files.
-
-[1]: http://www.wdtb.noaa.gov/tools/BUFKIT/
+{{readme}}
