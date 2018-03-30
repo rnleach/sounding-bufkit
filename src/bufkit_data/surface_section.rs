@@ -31,8 +31,7 @@ impl<'a> SurfaceSection<'a> {
         let header = &text[0..header_end].trim();
 
         // Parse the column headers
-        let cols =
-            SurfaceData::parse_columns(header)?;
+        let cols = SurfaceData::parse_columns(header)?;
 
         Ok(SurfaceSection {
             raw_text: text[header_end..].trim(),
@@ -79,8 +78,7 @@ pub struct SurfaceIterator<'a> {
 impl<'a> SurfaceIterator<'a> {
     fn get_next_chunk(&mut self) -> Result<Option<&'a str>, BufkitFileError> {
         use parse_util::find_next_n_tokens;
-        if let Some(brk) = find_next_n_tokens(self.remaining, self.columns.num_cols())?
-        {
+        if let Some(brk) = find_next_n_tokens(self.remaining, self.columns.num_cols())? {
             let next_chunk = &self.remaining[0..brk];
             self.remaining = &self.remaining[brk..];
             Ok(Some(next_chunk))

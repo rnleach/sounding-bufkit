@@ -8,6 +8,7 @@ mod upper_air;
 mod surface;
 
 use sounding_base::{Sounding, StationInfo};
+use sounding_analysis::Analysis;
 
 use self::surface::SurfaceData;
 use self::surface_section::{SurfaceIterator, SurfaceSection};
@@ -91,7 +92,7 @@ impl<'a> BufkitData<'a> {
 }
 
 impl<'a> IntoIterator for &'a BufkitData<'a> {
-    type Item = Sounding;
+    type Item = (Sounding, Analysis);
     type IntoIter = SoundingIterator<'a>;
 
     fn into_iter(self) -> Self::IntoIter {
@@ -102,9 +103,9 @@ impl<'a> IntoIterator for &'a BufkitData<'a> {
     }
 }
 
-fn combine_data(ua: &UpperAir, sd: &SurfaceData) -> Sounding {
+fn combine_data(ua: &UpperAir, sd: &SurfaceData) -> (Sounding, Analysis) {
     use sounding_base::Profile;
-    use sounding_base::Index;
+    use sounding_analysis::Index;
     use sounding_base::Surface;
 
     // Missing or no data values used in Bufkit files
@@ -113,36 +114,52 @@ fn combine_data(ua: &UpperAir, sd: &SurfaceData) -> Sounding {
 
     #[inline(always)]
     fn check_missing(val: f64) -> Option<f64> {
-        if val == MISSING_F64 { None } else { Some(val)}
+        if val == MISSING_F64 {
+            None
+        } else {
+            Some(val)
+        }
     }
 
     #[inline(always)]
     fn check_missing_i32(val: i32) -> Option<i32> {
-        if val == MISSING_I32 { None } else { Some(val)}
+        if val == MISSING_I32 {
+            None
+        } else {
+            Some(val)
+        }
     }
 
-    let coords = check_missing(ua.lat).and_then(|lat| check_missing(ua.lon).and_then(|lon| Some((lat,lon))));
-    let station = StationInfo::new_with_values(check_missing_i32(ua.num), coords, check_missing(ua.elevation));
+    let coords = check_missing(ua.lat)
+        .and_then(|lat| check_missing(ua.lon).and_then(|lon| Some((lat, lon))));
 
-    Sounding::new()
+    let station = StationInfo::new_with_values(
+        check_missing_i32(ua.num),
+        coords,
+        check_missing(ua.elevation),
+    );
+
+    let sfc_wind_spd = check_missing(sd.uwind)
+        .and_then(|u| check_missing(sd.vwind).and_then(|v| Some(u.hypot(v))))
+        .and_then(|mps| Some(mps * 1.94384)); // convert m/s to knots
+
+    let sfc_wind_dir = check_missing(sd.uwind)
+        .and_then(|u| check_missing(sd.vwind).and_then(|v| Some(v.atan2(u).to_degrees())))
+        .and_then(|mut dir| {
+            // map into 0 -> 360 range.
+            while dir < 0.0 {
+                dir += 360.0;
+            }
+            while dir > 360.0 {
+                dir -= 360.0;
+            }
+            Some(dir)
+        });
+
+    let snd = Sounding::new()
         .set_station_info(station)
         .set_valid_time(ua.valid_time)
         .set_lead_time(check_missing_i32(ua.lead_time))
-
-        // Indexes
-        .set_index(Index::Showalter,check_missing(ua.show))
-        .set_index(Index::LI, check_missing(ua.li))
-        .set_index(Index::SWeT, check_missing(ua.swet))
-        .set_index(Index::K, check_missing(ua.kinx))
-        .set_index(Index::LCL, check_missing(ua.lclp))
-        .set_index(Index::PWAT, check_missing(ua.pwat))
-        .set_index(Index::TotalTotals, check_missing(ua.totl))
-        .set_index(Index::CAPE, check_missing(ua.cape))
-        .set_index(Index::LCLTemperature, check_missing(ua.lclt))
-        .set_index(Index::CIN, check_missing(ua.cins))
-        .set_index(Index::EquilibrimLevel, check_missing(ua.eqlv))
-        .set_index(Index::LFC, check_missing(ua.lfc))
-        .set_index(Index::BulkRichardsonNumber, check_missing(ua.brch))
 
         // Upper air
         .set_profile(Profile::Pressure,
@@ -172,8 +189,26 @@ fn combine_data(ua: &UpperAir, sd: &SurfaceData) -> Sounding {
         .set_surface_value(Surface::LowCloud, check_missing(sd.low_cloud))
         .set_surface_value(Surface::MidCloud, check_missing(sd.mid_cloud))
         .set_surface_value(Surface::HighCloud, check_missing(sd.hi_cloud))
-        .set_surface_value(Surface::UWind, check_missing(sd.uwind))
-        .set_surface_value(Surface::VWind, check_missing(sd.vwind))
+        .set_surface_value(Surface::WindDirection, sfc_wind_dir)
+        .set_surface_value(Surface::WindSpeed, sfc_wind_spd);
+
+    // Indexes
+    let anal = Analysis::new()
+        .set(Index::Showalter, check_missing(ua.show))
+        .set(Index::LI, check_missing(ua.li))
+        .set(Index::SWeT, check_missing(ua.swet))
+        .set(Index::K, check_missing(ua.kinx))
+        .set(Index::LCL, check_missing(ua.lclp))
+        .set(Index::PWAT, check_missing(ua.pwat))
+        .set(Index::TotalTotals, check_missing(ua.totl))
+        .set(Index::CAPE, check_missing(ua.cape))
+        .set(Index::LCLTemperature, check_missing(ua.lclt))
+        .set(Index::CIN, check_missing(ua.cins))
+        .set(Index::EquilibrimLevel, check_missing(ua.eqlv))
+        .set(Index::LFC, check_missing(ua.lfc))
+        .set(Index::BulkRichardsonNumber, check_missing(ua.brch));
+
+    (snd, anal)
 }
 
 /// Iterator type for `BufkitData` that returns a `Sounding`.
@@ -183,7 +218,7 @@ pub struct SoundingIterator<'a> {
 }
 
 impl<'a> Iterator for SoundingIterator<'a> {
-    type Item = Sounding;
+    type Item = (Sounding, Analysis);
 
     fn next(&mut self) -> Option<Self::Item> {
         let mut next_ua_opt = self.upper_air_it.next();

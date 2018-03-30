@@ -5,6 +5,7 @@
 extern crate chrono;
 extern crate failure;
 
+extern crate sounding_analysis;
 extern crate sounding_base;
 
 mod bufkit_data;

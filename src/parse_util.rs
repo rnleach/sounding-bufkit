@@ -21,11 +21,9 @@ where
     FS: Fn(char) -> bool,
     FE: Fn(char) -> bool,
 {
-    let mut idx = src.find(key)
-        .ok_or_else(|| BufkitFileError::new())?;
+    let mut idx = src.find(key).ok_or_else(|| BufkitFileError::new())?;
     let mut head = &src[idx..];
-    idx = head.find(start_val)
-        .ok_or_else(|| BufkitFileError::new())?;
+    idx = head.find(start_val).ok_or_else(|| BufkitFileError::new())?;
     head = &head[idx..];
     // When finding the end of the value, you may go all the way to the end of the slice.
     // If so, find returns None, just convert that into the end of the slice.
