@@ -58,19 +58,19 @@ impl Indexes {
         let (brch, _) = parse_f64(head, "BRCH").unwrap_or((-9999.0, head));
 
         Ok(Indexes {
-            show: show,
+            show,
             li: lift,
-            swet: swet,
-            kinx: kinx,
-            lclp: lclp,
-            pwat: pwat,
-            totl: totl,
-            cape: cape,
-            lclt: lclt,
-            cins: cins,
-            eqlv: eqlv,
+            swet,
+            kinx,
+            lclp,
+            pwat,
+            totl,
+            cape,
+            lclt,
+            cins,
+            eqlv,
             lfc: lfct,
-            brch: brch,
+            brch,
         })
     }
 }

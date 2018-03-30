@@ -54,12 +54,10 @@ impl UpperAir {
         use self::indexes::Indexes;
         use self::profile::Profile;
 
-        let mut break_point = find_blank_line(text)
-            .ok_or_else(|| BufkitFileError::new())?;
+        let mut break_point = find_blank_line(text).ok_or_else(BufkitFileError::new)?;
         let (station_info_section, the_rest) = text.split_at(break_point);
 
-        break_point = find_blank_line(the_rest)
-            .ok_or_else(|| BufkitFileError::new())?;
+        break_point = find_blank_line(the_rest).ok_or_else(BufkitFileError::new)?;
         let (index_section, upper_air_section) = the_rest.split_at(break_point);
 
         let station_info = StationInfo::parse(station_info_section)?;

@@ -28,7 +28,7 @@ impl Profile {
     fn split_header_and_values(src: &str) -> Result<(&str, &str), BufkitFileError> {
         // Find the end of the header, and split into header and values.
         let header_end = src.find(|c| c == '-' || char::is_digit(c, 10))
-            .ok_or_else(|| BufkitFileError::new())?;
+            .ok_or_else(BufkitFileError::new)?;
         Ok(src.split_at(header_end))
     }
 

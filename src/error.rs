@@ -1,7 +1,7 @@
 //! Errors specific to the sounding-bufkit crate.
 use std::fmt::{Display, Formatter, Result};
 
-use failure::{Fail, Backtrace};
+use failure::{Backtrace, Fail};
 
 pub use failure::Error;
 
@@ -13,8 +13,10 @@ pub struct BufkitFileError {
 
 impl BufkitFileError {
     /// Createa new BufkitFileError.
-    pub fn new() -> BufkitFileError{
-        BufkitFileError{backtrace: Backtrace::new() }
+    pub fn new() -> BufkitFileError {
+        BufkitFileError {
+            backtrace: Backtrace::new(),
+        }
     }
 }
 
@@ -32,7 +34,7 @@ impl Fail for BufkitFileError {
 }
 
 impl Default for BufkitFileError {
-    fn default()->Self {
+    fn default() -> Self {
         BufkitFileError::new()
     }
 }
