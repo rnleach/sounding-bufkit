@@ -112,7 +112,6 @@ fn combine_data(ua: &UpperAir, sd: &SurfaceData) -> (Sounding, Analysis) {
     const MISSING_I32: i32 = -9999;
     const MISSING_F64: f64 = -9999.0;
 
-    #[inline(always)]
     fn check_missing(val: f64) -> Option<f64> {
         if val == MISSING_F64 {
             None
@@ -121,7 +120,6 @@ fn combine_data(ua: &UpperAir, sd: &SurfaceData) -> (Sounding, Analysis) {
         }
     }
 
-    #[inline(always)]
     fn check_missing_i32(val: i32) -> Option<i32> {
         if val == MISSING_I32 {
             None
@@ -221,32 +219,15 @@ impl<'a> Iterator for SoundingIterator<'a> {
     type Item = (Sounding, Analysis);
 
     fn next(&mut self) -> Option<Self::Item> {
-        let mut next_ua_opt = self.upper_air_it.next();
-        if next_ua_opt.is_none() {
-            return None;
-        }
-        let mut next_ua = next_ua_opt.unwrap();
-
-        let mut next_sd_opt = self.surface_it.next();
-        if next_sd_opt.is_none() {
-            return None;
-        }
-        let mut next_sd = next_sd_opt.unwrap();
+        let mut next_ua = self.upper_air_it.next()?;
+        let mut next_sd = self.surface_it.next()?;
 
         loop {
             while next_sd.valid_time < next_ua.valid_time {
-                next_sd_opt = self.surface_it.next();
-                if next_sd_opt.is_none() {
-                    return None;
-                }
-                next_sd = next_sd_opt.unwrap();
+                next_sd = self.surface_it.next()?;
             }
             while next_ua.valid_time < next_sd.valid_time {
-                next_ua_opt = self.upper_air_it.next();
-                if next_ua_opt.is_none() {
-                    return None;
-                }
-                next_ua = next_ua_opt.unwrap();
+                next_ua = self.upper_air_it.next()?;
             }
             if next_ua.valid_time == next_sd.valid_time {
                 return Some(combine_data(&next_ua, &next_sd));

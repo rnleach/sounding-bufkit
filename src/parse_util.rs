@@ -21,9 +21,9 @@ where
     FS: Fn(char) -> bool,
     FE: Fn(char) -> bool,
 {
-    let mut idx = src.find(key).ok_or_else(|| BufkitFileError::new())?;
+    let mut idx = src.find(key).ok_or_else(BufkitFileError::new)?;
     let mut head = &src[idx..];
-    idx = head.find(start_val).ok_or_else(|| BufkitFileError::new())?;
+    idx = head.find(start_val).ok_or_else(BufkitFileError::new)?;
     head = &head[idx..];
     // When finding the end of the value, you may go all the way to the end of the slice.
     // If so, find returns None, just convert that into the end of the slice.
@@ -179,11 +179,7 @@ pub fn find_blank_line(src: &str) -> Option<usize> {
 
     let mut iter = src.char_indices().peekable();
     loop {
-        let next = iter.next();
-        if next.is_none() {
-            return None;
-        }
-        let (_, c) = next.unwrap();
+        let (_, c) = iter.next()?;
 
         if c == '\n' && !first_newline {
             first_newline = true;

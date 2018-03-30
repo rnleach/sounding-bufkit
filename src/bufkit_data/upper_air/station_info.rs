@@ -60,8 +60,8 @@ impl StationInfo {
             num: station_num,
             valid_time: vt,
             lead_time: lt,
-            lat: lat,
-            lon: lon,
+            lat,
+            lon,
             elevation: elv,
         })
     }
