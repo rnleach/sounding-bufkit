@@ -15,6 +15,8 @@ pub struct SurfaceData {
     pub hi_cloud: f64, // high cloud coverage percent
     pub uwind: f64, // zonal surface wind (m/s)
     pub vwind: f64, // meridional surface wind (m/s)
+    pub temperature: f64, // 2 meter temperature C
+    pub dewpoint: f64, // 2 meter dew point C
 }
 
 impl SurfaceData {
@@ -42,6 +44,8 @@ impl SurfaceData {
                 "HCLD" => cols.names.push(HCLD),
                 "UWND" => cols.names.push(UWND),
                 "VWND" => cols.names.push(VWND),
+                "T2MS" => cols.names.push(T2MS),
+                "TD2M" => cols.names.push(TD2M),
                 _ => cols.names.push(NONE),
             }
         }
@@ -83,6 +87,8 @@ impl SurfaceData {
                     HCLD => sd.hi_cloud = f64::from_str(token)?,
                     UWND => sd.uwind = f64::from_str(token)?,
                     VWND => sd.vwind = f64::from_str(token)?,
+                    T2MS => sd.temperature = f64::from_str(token)?,
+                    TD2M => sd.dewpoint = f64::from_str(token)?,
                 };
             } else {
                 return Err(BufkitFileError::new().into());
@@ -105,6 +111,8 @@ impl Default for SurfaceData {
             hi_cloud: -9999.0,
             uwind: -9999.0,
             vwind: -9999.0,
+            temperature: -9999.0,
+            dewpoint: -9999.0,
         }
     }
 }
@@ -122,6 +130,8 @@ enum SfcColName {
     HCLD,
     UWND,
     VWND,
+    T2MS, // 2 Meter temperature
+    TD2M, // 2 Meter dew point
 }
 
 #[derive(Debug)]
@@ -199,6 +209,8 @@ mod test {
                 12 => col_name = HCLD,
                 13 => col_name = UWND,
                 14 => col_name = VWND,
+                15 => col_name = T2MS,
+                22 => col_name = TD2M,
                 _ => col_name = NONE,
             };
 
@@ -225,6 +237,8 @@ mod test {
                 13 => col_name = HCLD,
                 15 => col_name = UWND,
                 16 => col_name = VWND,
+                19 => col_name = T2MS,
+                32 => col_name = TD2M,
                 _ => col_name = NONE,
             };
 

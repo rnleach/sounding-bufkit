@@ -183,6 +183,8 @@ fn combine_data(ua: &UpperAir, sd: &SurfaceData) -> (Sounding, Analysis) {
 
         // Surface data
         .set_surface_value(Surface::MSLP, check_missing(sd.mslp))
+        .set_surface_value(Surface::Temperature, check_missing(sd.temperature))
+        .set_surface_value(Surface::DewPoint, check_missing(sd.dewpoint))
         .set_surface_value(Surface::StationPressure, check_missing(sd.station_pres))
         .set_surface_value(Surface::LowCloud, check_missing(sd.low_cloud))
         .set_surface_value(Surface::MidCloud, check_missing(sd.mid_cloud))
