@@ -1,5 +1,5 @@
 //! Module for reading a bufkit file and breaking it into smaller pieces for parsing later.
-
+use std::collections::HashMap;
 use std::path::Path;
 
 mod upper_air_section;
@@ -92,7 +92,7 @@ impl<'a> BufkitData<'a> {
 }
 
 impl<'a> IntoIterator for &'a BufkitData<'a> {
-    type Item = (Sounding, Analysis);
+    type Item = Analysis;
     type IntoIter = SoundingIterator<'a>;
 
     fn into_iter(self) -> Self::IntoIter {
@@ -103,9 +103,8 @@ impl<'a> IntoIterator for &'a BufkitData<'a> {
     }
 }
 
-fn combine_data(ua: &UpperAir, sd: &SurfaceData) -> (Sounding, Analysis) {
+fn combine_data(ua: &UpperAir, sd: &SurfaceData) -> Analysis {
     use sounding_base::Profile;
-    use sounding_analysis::Index;
     use sounding_base::Surface;
 
     // Missing or no data values used in Bufkit files
@@ -192,23 +191,33 @@ fn combine_data(ua: &UpperAir, sd: &SurfaceData) -> (Sounding, Analysis) {
         .set_surface_value(Surface::WindDirection, sfc_wind_dir)
         .set_surface_value(Surface::WindSpeed, sfc_wind_spd);
 
-    // Indexes
-    let anal = Analysis::new()
-        .set(Index::Showalter, check_missing(ua.show))
-        .set(Index::LI, check_missing(ua.li))
-        .set(Index::SWeT, check_missing(ua.swet))
-        .set(Index::K, check_missing(ua.kinx))
-        .set(Index::LCL, check_missing(ua.lclp))
-        .set(Index::PWAT, check_missing(ua.pwat))
-        .set(Index::TotalTotals, check_missing(ua.totl))
-        .set(Index::CAPE, check_missing(ua.cape))
-        .set(Index::LCLTemperature, check_missing(ua.lclt))
-        .set(Index::CIN, check_missing(ua.cins))
-        .set(Index::EquilibrimLevel, check_missing(ua.eqlv))
-        .set(Index::LFC, check_missing(ua.lfc))
-        .set(Index::BulkRichardsonNumber, check_missing(ua.brch));
+    macro_rules! check_and_add {
+        ($opt:expr, $key:expr, $hash_map:ident) => {
+            if let Some(val) = check_missing($opt) {
+                $hash_map.insert($key, val);
+            }
 
-    (snd, anal)
+        };
+    }
+
+    let mut bufkit_anal: HashMap<&'static str, f64> = HashMap::new();
+    check_and_add!(ua.show, "Showalter", bufkit_anal);
+    check_and_add!(ua.swet, "SWeT", bufkit_anal);
+    check_and_add!(ua.kinx, "K", bufkit_anal);
+    check_and_add!(ua.li, "LI", bufkit_anal);
+    check_and_add!(ua.lclp, "LCL", bufkit_anal);
+    check_and_add!(ua.pwat, "PWAT", bufkit_anal);
+    check_and_add!(ua.totl, "TotalTotals", bufkit_anal);
+    check_and_add!(ua.cape, "CAPE", bufkit_anal);
+    check_and_add!(ua.cins, "CIN", bufkit_anal);
+    check_and_add!(ua.lclt, "LCLTemperature", bufkit_anal);
+    check_and_add!(ua.eqlv, "EquilibriumLevel", bufkit_anal);
+    check_and_add!(ua.lfc, "LFC", bufkit_anal);
+    check_and_add!(ua.brch, "BulkRichardsonNumber", bufkit_anal);
+
+    let anal = Analysis::new(snd).with_provider_analysis(bufkit_anal);
+
+    anal
 }
 
 /// Iterator type for `BufkitData` that returns a `Sounding`.
@@ -218,7 +227,7 @@ pub struct SoundingIterator<'a> {
 }
 
 impl<'a> Iterator for SoundingIterator<'a> {
-    type Item = (Sounding, Analysis);
+    type Item = Analysis;
 
     fn next(&mut self) -> Option<Self::Item> {
         let mut next_ua = self.upper_air_it.next()?;
