@@ -2,6 +2,8 @@
 use std::collections::HashMap;
 use std::path::Path;
 
+use optional::{Optioned, some, none};
+
 mod upper_air_section;
 mod surface_section;
 mod upper_air;
@@ -111,11 +113,11 @@ fn combine_data(ua: &UpperAir, sd: &SurfaceData) -> Analysis {
     const MISSING_I32: i32 = -9999;
     const MISSING_F64: f64 = -9999.0;
 
-    fn check_missing(val: f64) -> Option<f64> {
+    fn check_missing(val: f64) -> Optioned<f64> {
         if val == MISSING_F64 {
-            None
+            none()
         } else {
-            Some(val)
+            some(val)
         }
     }
 
@@ -127,8 +129,11 @@ fn combine_data(ua: &UpperAir, sd: &SurfaceData) -> Analysis {
         }
     }
 
-    let coords = check_missing(ua.lat)
-        .and_then(|lat| check_missing(ua.lon).and_then(|lon| Some((lat, lon))));
+    let coords: Option<(f64,f64)> = if ua.lat == MISSING_F64 || ua.lon == MISSING_F64 {
+        None
+    } else {
+        Some((ua.lat,ua.lon))
+    };
 
     let station = StationInfo::new_with_values(
         check_missing_i32(ua.num),
@@ -137,11 +142,11 @@ fn combine_data(ua: &UpperAir, sd: &SurfaceData) -> Analysis {
     );
 
     let sfc_wind_spd = check_missing(sd.uwind)
-        .and_then(|u| check_missing(sd.vwind).and_then(|v| Some(u.hypot(v))))
-        .and_then(|mps| Some(mps * 1.94384)); // convert m/s to knots
+        .and_then(|u| check_missing(sd.vwind).and_then(|v| some(u.hypot(v))))
+        .and_then(|mps| some(mps * 1.94384)); // convert m/s to knots
 
     let sfc_wind_dir = check_missing(sd.uwind)
-        .and_then(|u| check_missing(sd.vwind).and_then(|v| Some(v.atan2(u).to_degrees())))
+        .and_then(|u| check_missing(sd.vwind).and_then(|v| some(v.atan2(u).to_degrees())))
         .and_then(|mut dir| {
             // map into 0 -> 360 range.
             while dir < 0.0 {
@@ -150,7 +155,7 @@ fn combine_data(ua: &UpperAir, sd: &SurfaceData) -> Analysis {
             while dir > 360.0 {
                 dir -= 360.0;
             }
-            Some(dir)
+            some(dir)
         });
 
     let snd = Sounding::new()
@@ -193,7 +198,7 @@ fn combine_data(ua: &UpperAir, sd: &SurfaceData) -> Analysis {
 
     macro_rules! check_and_add {
         ($opt:expr, $key:expr, $hash_map:ident) => {
-            if let Some(val) = check_missing($opt) {
+            if let Some(val) = check_missing($opt).into() {
                 $hash_map.insert($key, val);
             }
 

@@ -15,6 +15,7 @@ pub use bufkit_data::{BufkitData, BufkitFile, SoundingIterator};
 //
 extern crate chrono;
 extern crate failure;
+extern crate optional;
 
 extern crate sounding_analysis;
 extern crate sounding_base;
