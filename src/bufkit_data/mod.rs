@@ -158,6 +158,23 @@ fn combine_data(ua: &UpperAir, sd: &SurfaceData) -> Analysis {
             some(dir)
         });
 
+    let strm_motion_spd = check_missing(sd.u_storm)
+        .and_then(|u| check_missing(sd.v_storm).and_then(|v| some(u.hypot(v))))
+        .and_then(|mps| some(mps * 1.94384)); // convert m/s to knots
+
+    let strm_motion_dir = check_missing(sd.u_storm)
+        .and_then(|u| check_missing(sd.v_storm).and_then(|v| some(v.atan2(u).to_degrees())))
+        .and_then(|mut dir| {
+            // map into 0 -> 360 range.
+            while dir < 0.0 {
+                dir += 360.0;
+            }
+            while dir > 360.0 {
+                dir -= 360.0;
+            }
+            some(dir)
+        });
+
     let snd = Sounding::new()
         .set_station_info(station)
         .set_valid_time(ua.valid_time)
@@ -219,6 +236,20 @@ fn combine_data(ua: &UpperAir, sd: &SurfaceData) -> Analysis {
     check_and_add!(ua.eqlv, "EquilibriumLevel", bufkit_anal);
     check_and_add!(ua.lfc, "LFC", bufkit_anal);
     check_and_add!(ua.brch, "BulkRichardsonNumber", bufkit_anal);
+
+    // Add some surface data
+    check_and_add!(sd.skin_temp, "SkinTemperature", bufkit_anal);
+    check_and_add!(sd.lyr_1_soil_temp, "Layer1SoilTemp", bufkit_anal);
+    check_and_add!(sd.snow_1hr, "SnowFall1HourKgPerMeterSquared", bufkit_anal);
+    check_and_add!(sd.p01 / 25.4, "Precipitation1HrIn", bufkit_anal);
+    check_and_add!(sd.c01 / 25.4, "ConvectivePrecip1HrIn", bufkit_anal);
+    check_and_add!(sd.lyr_2_soil_temp,"Layer2SoilTemp", bufkit_anal);
+    check_and_add!(sd.snow_ratio, "SnowRatio", bufkit_anal);
+    if let (Some(spd), Some(dir)) = (strm_motion_spd.into(), strm_motion_dir.into()){
+        bufkit_anal.insert("StormMotionSpd",spd);
+        bufkit_anal.insert("StormMotionDir", dir);
+    }
+    check_and_add!(sd.srh, "StormRelativeHelicity", bufkit_anal);
 
     let anal = Analysis::new(snd).with_provider_analysis(bufkit_anal);
 
