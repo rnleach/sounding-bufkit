@@ -2,6 +2,8 @@
 use std::collections::HashMap;
 use std::path::Path;
 
+use optional::{Optioned, some, none};
+
 mod upper_air_section;
 mod surface_section;
 mod upper_air;
@@ -111,11 +113,11 @@ fn combine_data(ua: &UpperAir, sd: &SurfaceData) -> Analysis {
     const MISSING_I32: i32 = -9999;
     const MISSING_F64: f64 = -9999.0;
 
-    fn check_missing(val: f64) -> Option<f64> {
+    fn check_missing(val: f64) -> Optioned<f64> {
         if val == MISSING_F64 {
-            None
+            none()
         } else {
-            Some(val)
+            some(val)
         }
     }
 
@@ -127,8 +129,11 @@ fn combine_data(ua: &UpperAir, sd: &SurfaceData) -> Analysis {
         }
     }
 
-    let coords = check_missing(ua.lat)
-        .and_then(|lat| check_missing(ua.lon).and_then(|lon| Some((lat, lon))));
+    let coords: Option<(f64,f64)> = if ua.lat == MISSING_F64 || ua.lon == MISSING_F64 {
+        None
+    } else {
+        Some((ua.lat,ua.lon))
+    };
 
     let station = StationInfo::new_with_values(
         check_missing_i32(ua.num),
@@ -137,11 +142,11 @@ fn combine_data(ua: &UpperAir, sd: &SurfaceData) -> Analysis {
     );
 
     let sfc_wind_spd = check_missing(sd.uwind)
-        .and_then(|u| check_missing(sd.vwind).and_then(|v| Some(u.hypot(v))))
-        .and_then(|mps| Some(mps * 1.94384)); // convert m/s to knots
+        .and_then(|u| check_missing(sd.vwind).and_then(|v| some(u.hypot(v))))
+        .and_then(|mps| some(mps * 1.94384)); // convert m/s to knots
 
     let sfc_wind_dir = check_missing(sd.uwind)
-        .and_then(|u| check_missing(sd.vwind).and_then(|v| Some(v.atan2(u).to_degrees())))
+        .and_then(|u| check_missing(sd.vwind).and_then(|v| some(v.atan2(u).to_degrees())))
         .and_then(|mut dir| {
             // map into 0 -> 360 range.
             while dir < 0.0 {
@@ -150,7 +155,24 @@ fn combine_data(ua: &UpperAir, sd: &SurfaceData) -> Analysis {
             while dir > 360.0 {
                 dir -= 360.0;
             }
-            Some(dir)
+            some(dir)
+        });
+
+    let strm_motion_spd = check_missing(sd.u_storm)
+        .and_then(|u| check_missing(sd.v_storm).and_then(|v| some(u.hypot(v))))
+        .and_then(|mps| some(mps * 1.94384)); // convert m/s to knots
+
+    let strm_motion_dir = check_missing(sd.u_storm)
+        .and_then(|u| check_missing(sd.v_storm).and_then(|v| some(v.atan2(u).to_degrees())))
+        .and_then(|mut dir| {
+            // map into 0 -> 360 range.
+            while dir < 0.0 {
+                dir += 360.0;
+            }
+            while dir > 360.0 {
+                dir -= 360.0;
+            }
+            some(dir)
         });
 
     let snd = Sounding::new()
@@ -193,7 +215,7 @@ fn combine_data(ua: &UpperAir, sd: &SurfaceData) -> Analysis {
 
     macro_rules! check_and_add {
         ($opt:expr, $key:expr, $hash_map:ident) => {
-            if let Some(val) = check_missing($opt) {
+            if let Some(val) = check_missing($opt).into() {
                 $hash_map.insert($key, val);
             }
 
@@ -214,6 +236,20 @@ fn combine_data(ua: &UpperAir, sd: &SurfaceData) -> Analysis {
     check_and_add!(ua.eqlv, "EquilibriumLevel", bufkit_anal);
     check_and_add!(ua.lfc, "LFC", bufkit_anal);
     check_and_add!(ua.brch, "BulkRichardsonNumber", bufkit_anal);
+
+    // Add some surface data
+    check_and_add!(sd.skin_temp, "SkinTemperature", bufkit_anal);
+    check_and_add!(sd.lyr_1_soil_temp, "Layer1SoilTemp", bufkit_anal);
+    check_and_add!(sd.snow_1hr, "SnowFall1HourKgPerMeterSquared", bufkit_anal);
+    check_and_add!(sd.p01 / 25.4, "Precipitation1HrIn", bufkit_anal);
+    check_and_add!(sd.c01 / 25.4, "ConvectivePrecip1HrIn", bufkit_anal);
+    check_and_add!(sd.lyr_2_soil_temp,"Layer2SoilTemp", bufkit_anal);
+    check_and_add!(sd.snow_ratio, "SnowRatio", bufkit_anal);
+    if let (Some(spd), Some(dir)) = (strm_motion_spd.into(), strm_motion_dir.into()){
+        bufkit_anal.insert("StormMotionSpd",spd);
+        bufkit_anal.insert("StormMotionDir", dir);
+    }
+    check_and_add!(sd.srh, "StormRelativeHelicity", bufkit_anal);
 
     let anal = Analysis::new(snd).with_provider_analysis(bufkit_anal);
 

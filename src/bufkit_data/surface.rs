@@ -8,15 +8,39 @@ use error::*;
 pub struct SurfaceData {
     pub station_num: i32,          // Same is in StationInfo
     pub valid_time: NaiveDateTime, // Always assume UTC.
-    pub mslp: f64, // Surface pressure reduce to mean sea level (mb or hPa, the same)
-    pub station_pres: f64, // Surface pressure
-    pub low_cloud: f64, // low cloud coverage percent
-    pub mid_cloud: f64, // mid cloud coverage percent
-    pub hi_cloud: f64, // high cloud coverage percent
-    pub uwind: f64, // zonal surface wind (m/s)
-    pub vwind: f64, // meridional surface wind (m/s)
-    pub temperature: f64, // 2 meter temperature C
-    pub dewpoint: f64, // 2 meter dew point C
+    pub mslp: f64,                 // Surface pressure reduce to mean sea level
+    pub station_pres: f64,         // Surface pressure
+    pub low_cloud: f64,            // low cloud coverage percent
+    pub mid_cloud: f64,            // mid cloud coverage percent
+    pub hi_cloud: f64,             // high cloud coverage percent
+    pub uwind: f64,                // zonal surface wind (m/s)
+    pub vwind: f64,                // meridional surface wind (m/s)
+    pub temperature: f64,          // 2 meter temperature C
+    pub dewpoint: f64,             // 2 meter dew point C
+
+    pub skin_temp: f64,            // Skin temperature (C)
+    pub lyr_1_soil_temp: f64,      // Layer 1 soil temperature (K)
+    pub snow_1hr: f64,             // 1-hour accumulated snowfall (Kg/m**2)
+
+    // WTNS - Soil moisture availability (percent)
+    pub p01: f64,                  // P01M - 1-hour total precipitation (mm)
+    pub c01: f64,                  // C01M - 1-hour convective precipitation (mm)
+    pub lyr_2_soil_temp: f64,      // STC2 - Layer 2 soil temperature (K)
+    pub snow_ratio: f64,           // SNRA - Snow ratio from explicit cloud scheme (percent)
+    // R01M - 1-hour accumulated surface runoff (mm)
+    // BFGR - 1-hour accumulated baseflow-groundwater runoff (mm)
+    // Q2MS - 2-meter specific humidity
+    // WXTS - Snow precipitation type (1=Snow)
+    // WXTP - Ice pellets precipitation type (1=Ice pellets)
+    // WXTZ - Freezing rain precipitation type (1=Freezing rain)
+    // WXTR - Rain precipitation type (1=Rain)
+    pub u_storm: f64,              // USTM - U-component of storm motion (m/s)
+    pub v_storm: f64,              // VSTM - V-component of storm motion (m/s)
+    pub srh: f64,                  // HLCY - Storm relative helicity (m**2/s**2)
+    // SLLH - 1-hour surface evaporation (mm)
+    // WSYM - Weather type symbol number
+    // CDBP - Pressure at the base of cloud (hPa)
+    // VSBK - Visibility (km)
 }
 
 impl SurfaceData {
@@ -46,6 +70,16 @@ impl SurfaceData {
                 "VWND" => cols.names.push(VWND),
                 "T2MS" => cols.names.push(T2MS),
                 "TD2M" => cols.names.push(TD2M),
+                "SKTC" => cols.names.push(SKTC),
+                "STC1" => cols.names.push(STC1),
+                "SNFL" => cols.names.push(SNFL),
+                "P01M" => cols.names.push(P01M),
+                "C01M" => cols.names.push(C01M),
+                "STC2" => cols.names.push(STC2),
+                "SNRA" => cols.names.push(SNRA),
+                "USTM" => cols.names.push(USTM),
+                "VSTM" => cols.names.push(VSTM),
+                "HLCY" => cols.names.push(HLCY),
                 _ => cols.names.push(NONE),
             }
         }
@@ -75,7 +109,7 @@ impl SurfaceData {
                 use self::SfcColName::*;
                 use parse_util::*;
                 let _dummy: f64; // Used just to check that there is a valid value there.
-
+                
                 match cols.names[i] {
                     NONE => _dummy = f64::from_str(token)?,
                     STN => sd.station_num = i32::from_str(token)?,
@@ -89,6 +123,16 @@ impl SurfaceData {
                     VWND => sd.vwind = f64::from_str(token)?,
                     T2MS => sd.temperature = f64::from_str(token)?,
                     TD2M => sd.dewpoint = f64::from_str(token)?,
+                    SKTC => sd.skin_temp = f64::from_str(token)?,
+                    STC1 => sd.lyr_1_soil_temp = f64::from_str(token)?,
+                    SNFL => sd.snow_1hr = f64::from_str(token)?,
+                    P01M => sd.p01 = f64::from_str(token)?,
+                    C01M => sd.c01 = f64::from_str(token)?,
+                    STC2 => sd.lyr_2_soil_temp = f64::from_str(token)?,
+                    SNRA => sd.snow_ratio = f64::from_str(token)?,
+                    USTM => sd.u_storm = f64::from_str(token)?,
+                    VSTM => sd.v_storm = f64::from_str(token)?,
+                    HLCY => sd.srh = f64::from_str(token)?,
                 };
             } else {
                 return Err(BufkitFileError::new().into());
@@ -113,6 +157,16 @@ impl Default for SurfaceData {
             vwind: -9999.0,
             temperature: -9999.0,
             dewpoint: -9999.0,
+            skin_temp: -9999.0,
+            lyr_1_soil_temp: -9999.0,
+            snow_1hr: -9999.0,
+            p01: -9999.0,
+            c01: -9999.0,
+            lyr_2_soil_temp: -9999.0,
+            snow_ratio: -9999.0,
+            u_storm: -9999.0,
+            v_storm: -9999.0,
+            srh: -9999.0,
         }
     }
 }
@@ -132,6 +186,16 @@ enum SfcColName {
     VWND,
     T2MS, // 2 Meter temperature
     TD2M, // 2 Meter dew point
+    SKTC, // Skin temperature
+    STC1, // layer 1 soil temperature
+    SNFL, // 1-hour snow fall kg/m^2
+    P01M, // 1-hour total precipitation (mm)
+    C01M, // 1-hour convective precipitation (mm)
+    STC2, // Layer 2 soil temperature (K)
+    SNRA, // Snow ratio from explicit cloud scheme (percent)
+    USTM, // USTM - U-component of storm motion (m/s)
+    VSTM, // VSTM - V-component of storm motion (m/s)
+    HLCY, // HLCY - Storm relative helicity (m**2/s**2)
 }
 
 #[derive(Debug)]
@@ -204,6 +268,8 @@ mod test {
                 1 => col_name = VALIDTIME,
                 2 => col_name = PMSL,
                 3 => col_name = PRES,
+                4 => col_name = SKTC,
+                5 => col_name = STC1,
                 10 => col_name = LCLD,
                 11 => col_name = MCLD,
                 12 => col_name = HCLD,
@@ -232,13 +298,28 @@ mod test {
                 1 => col_name = VALIDTIME,
                 2 => col_name = PMSL,
                 3 => col_name = PRES,
+                4 => col_name = SKTC,
+                5 => col_name = STC1,
+                6 => col_name = SNFL,
+                
+                8 => col_name = P01M,
+                9 => col_name = C01M,
+                10 => col_name = STC2,
                 11 => col_name = LCLD,
                 12 => col_name = MCLD,
                 13 => col_name = HCLD,
+                14 => col_name = SNRA,
                 15 => col_name = UWND,
                 16 => col_name = VWND,
+
                 19 => col_name = T2MS,
+
+                25 => col_name = USTM,
+                26 => col_name = VSTM,
+                27 => col_name = HLCY,
+
                 32 => col_name = TD2M,
+
                 _ => col_name = NONE,
             };
 
