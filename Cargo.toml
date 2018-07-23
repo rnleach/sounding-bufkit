@@ -1,6 +1,6 @@
 [package]
 name = "sounding-bufkit"
-version = "0.7.0"
+version = "0.8.0"
 authors = ["Ryan Leach <clumsycodemonkey@gmail.com>"]
 description = """Library to parse and load Bufkit sounding files."""
 repository = "https://github.com/rnleach/sounding-bufkit.git"
@@ -12,7 +12,10 @@ keywords = ["weather","sounding","meteorology", "skew-t", "Bufkit"]
 
 [dependencies]
 sounding-base = "^0.7"
-sounding-analysis = "^0.7"
+sounding-analysis = "^0.8"
 chrono="^0.4"
 failure = "0.1.1"
 optional = "^0.4.2"
+
+[patch.crates-io]
+sounding-analysis = {git="https://github.com/rnleach/sounding-analysis.git", branch="dev"}
