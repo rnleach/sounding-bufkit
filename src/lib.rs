@@ -7,8 +7,8 @@
 // API
 //
 
-pub use error::*;
 pub use bufkit_data::{BufkitData, BufkitFile, SoundingIterator};
+pub use error::*;
 
 //
 // Internal use only

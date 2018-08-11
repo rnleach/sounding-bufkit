@@ -18,15 +18,15 @@ pub struct SurfaceData {
     pub temperature: f64,          // 2 meter temperature C
     pub dewpoint: f64,             // 2 meter dew point C
 
-    pub skin_temp: f64,            // Skin temperature (C)
-    pub lyr_1_soil_temp: f64,      // Layer 1 soil temperature (K)
-    pub snow_1hr: f64,             // 1-hour accumulated snowfall (Kg/m**2)
+    pub skin_temp: f64,       // Skin temperature (C)
+    pub lyr_1_soil_temp: f64, // Layer 1 soil temperature (K)
+    pub snow_1hr: f64,        // 1-hour accumulated snowfall (Kg/m**2)
 
     // WTNS - Soil moisture availability (percent)
-    pub p01: f64,                  // P01M - 1-hour total precipitation (mm)
-    pub c01: f64,                  // C01M - 1-hour convective precipitation (mm)
-    pub lyr_2_soil_temp: f64,      // STC2 - Layer 2 soil temperature (K)
-    pub snow_ratio: f64,           // SNRA - Snow ratio from explicit cloud scheme (percent)
+    pub p01: f64,             // P01M - 1-hour total precipitation (mm)
+    pub c01: f64,             // C01M - 1-hour convective precipitation (mm)
+    pub lyr_2_soil_temp: f64, // STC2 - Layer 2 soil temperature (K)
+    pub snow_ratio: f64,      // SNRA - Snow ratio from explicit cloud scheme (percent)
     // R01M - 1-hour accumulated surface runoff (mm)
     // BFGR - 1-hour accumulated baseflow-groundwater runoff (mm)
     // Q2MS - 2-meter specific humidity
@@ -34,13 +34,13 @@ pub struct SurfaceData {
     // WXTP - Ice pellets precipitation type (1=Ice pellets)
     // WXTZ - Freezing rain precipitation type (1=Freezing rain)
     // WXTR - Rain precipitation type (1=Rain)
-    pub u_storm: f64,              // USTM - U-component of storm motion (m/s)
-    pub v_storm: f64,              // VSTM - V-component of storm motion (m/s)
-    pub srh: f64,                  // HLCY - Storm relative helicity (m**2/s**2)
-    // SLLH - 1-hour surface evaporation (mm)
-    // WSYM - Weather type symbol number
-    // CDBP - Pressure at the base of cloud (hPa)
-    // VSBK - Visibility (km)
+    pub u_storm: f64, // USTM - U-component of storm motion (m/s)
+    pub v_storm: f64, // VSTM - V-component of storm motion (m/s)
+    pub srh: f64,     // HLCY - Storm relative helicity (m**2/s**2)
+                      // SLLH - 1-hour surface evaporation (mm)
+                      // WSYM - Weather type symbol number
+                      // CDBP - Pressure at the base of cloud (hPa)
+                      // VSBK - Visibility (km)
 }
 
 impl SurfaceData {
@@ -109,7 +109,7 @@ impl SurfaceData {
                 use self::SfcColName::*;
                 use parse_util::*;
                 let _dummy: f64; // Used just to check that there is a valid value there.
-                
+
                 match cols.names[i] {
                     NONE => _dummy = f64::from_str(token)?,
                     STN => sd.station_num = i32::from_str(token)?,
@@ -301,7 +301,7 @@ mod test {
                 4 => col_name = SKTC,
                 5 => col_name = STC1,
                 6 => col_name = SNFL,
-                
+
                 8 => col_name = P01M,
                 9 => col_name = C01M,
                 10 => col_name = STC2,

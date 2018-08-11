@@ -1,7 +1,7 @@
 //! Deals with the text and parsing of the surface section in a bufkit file.
 
-use error::*;
 use bufkit_data::surface::{SfcColumns, SurfaceData};
+use error::*;
 
 /// Represents the section of a string that represents surface data in a bufkit file.
 pub struct SurfaceSection<'a> {

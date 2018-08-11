@@ -1,8 +1,8 @@
 //! Module for parsing the upper air section of a bufkit file.
 
 mod indexes;
-mod station_info;
 mod profile;
+mod station_info;
 
 use chrono::NaiveDateTime;
 use error::*;
@@ -49,10 +49,10 @@ pub struct UpperAir {
 impl UpperAir {
     /// Given a string slice, attempt to parse it into a UpperAir.
     pub fn parse(text: &str) -> Result<UpperAir, Error> {
-        use parse_util::find_blank_line;
-        use self::station_info::StationInfo;
         use self::indexes::Indexes;
         use self::profile::Profile;
+        use self::station_info::StationInfo;
+        use parse_util::find_blank_line;
 
         let mut break_point = find_blank_line(text).ok_or_else(BufkitFileError::new)?;
         let (station_info_section, the_rest) = text.split_at(break_point);

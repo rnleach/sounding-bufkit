@@ -2,15 +2,15 @@
 use std::collections::HashMap;
 use std::path::Path;
 
-use optional::{Optioned, some, none};
+use optional::{none, some, Optioned};
 
-mod upper_air_section;
+mod surface;
 mod surface_section;
 mod upper_air;
-mod surface;
+mod upper_air_section;
 
-use sounding_base::{Sounding, StationInfo};
 use sounding_analysis::Analysis;
+use sounding_base::{Sounding, StationInfo};
 
 use self::surface::SurfaceData;
 use self::surface_section::{SurfaceIterator, SurfaceSection};
@@ -27,8 +27,8 @@ impl BufkitFile {
     /// Load a file into memory.
     pub fn load(path: &Path) -> Result<BufkitFile, Error> {
         use std::fs::File;
-        use std::io::BufReader;
         use std::io::prelude::Read;
+        use std::io::BufReader;
 
         // Load the file contents
         let mut file = BufReader::new(File::open(path)?);
@@ -129,10 +129,10 @@ fn combine_data(ua: &UpperAir, sd: &SurfaceData) -> Analysis {
         }
     }
 
-    let coords: Option<(f64,f64)> = if ua.lat == MISSING_F64 || ua.lon == MISSING_F64 {
+    let coords: Option<(f64, f64)> = if ua.lat == MISSING_F64 || ua.lon == MISSING_F64 {
         None
     } else {
-        Some((ua.lat,ua.lon))
+        Some((ua.lat, ua.lon))
     };
 
     let station = StationInfo::new_with_values(
@@ -218,7 +218,6 @@ fn combine_data(ua: &UpperAir, sd: &SurfaceData) -> Analysis {
             if let Some(val) = check_missing($opt).into() {
                 $hash_map.insert($key, val);
             }
-
         };
     }
 
@@ -243,10 +242,10 @@ fn combine_data(ua: &UpperAir, sd: &SurfaceData) -> Analysis {
     check_and_add!(sd.snow_1hr, "SnowFall1HourKgPerMeterSquared", bufkit_anal);
     check_and_add!(sd.p01 / 25.4, "Precipitation1HrIn", bufkit_anal);
     check_and_add!(sd.c01 / 25.4, "ConvectivePrecip1HrIn", bufkit_anal);
-    check_and_add!(sd.lyr_2_soil_temp,"Layer2SoilTemp", bufkit_anal);
+    check_and_add!(sd.lyr_2_soil_temp, "Layer2SoilTemp", bufkit_anal);
     check_and_add!(sd.snow_ratio, "SnowRatio", bufkit_anal);
-    if let (Some(spd), Some(dir)) = (strm_motion_spd.into(), strm_motion_dir.into()){
-        bufkit_anal.insert("StormMotionSpd",spd);
+    if let (Some(spd), Some(dir)) = (strm_motion_spd.into(), strm_motion_dir.into()) {
+        bufkit_anal.insert("StormMotionSpd", spd);
         bufkit_anal.insert("StormMotionDir", dir);
     }
     check_and_add!(sd.srh, "StormRelativeHelicity", bufkit_anal);
