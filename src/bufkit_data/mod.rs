@@ -52,6 +52,11 @@ impl BufkitFile {
     pub fn data(&self) -> Result<BufkitData, Error> {
         BufkitData::new(&self.file_text)
     }
+
+    /// Get the raw string data from the file.
+    pub fn raw_text(&self) -> &str {
+        &self.file_text
+    }
 }
 
 /// References to different data sections within a `BufkitFile` mainly useful for generating
