@@ -1,8 +1,0 @@
-{
-    "files.exclude": {
-        "target": true,
-        "Cargo.lock": true,
-        "**/*.rs.bk": true,
-        "*.sublime*":true
-    } 
-}

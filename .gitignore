@@ -6,9 +6,10 @@
 Cargo.lock
 
 //
-// Sublime editor
+// text editors
 //
-*.sublime-workspace
+*.sublime*
+.vscode
 
 //
 // OS specific
