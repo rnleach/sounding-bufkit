@@ -149,7 +149,7 @@ fn combine_data(ua: &UpperAir, sd: &SurfaceData) -> Analysis {
     let (sfc_wind_dir, sfc_wind_spd) = {
         let u = check_missing(sd.uwind).into_option();
         let v = check_missing(sd.vwind).into_option();
-        if let (Some(u), Some(v)) = (u,v){
+        if let (Some(u), Some(v)) = (u, v) {
             let (dir, spd) = ::metfor::uv_to_spd_dir(u, v);
             (some(dir), some(spd))
         } else {

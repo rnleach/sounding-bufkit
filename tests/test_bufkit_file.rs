@@ -43,13 +43,15 @@ fn test_bufkit_file_validation() {
 
 fn validate_dir(dir: &Path) {
     assert!(dir.is_dir(), "Example data directory not found.");
-    let files: Vec<_> = dir.read_dir()
+    let files: Vec<_> = dir
+        .read_dir()
         .unwrap()
         .map(|res| res.unwrap().path())
         .filter(|path| path.is_file() && path.to_str().unwrap().ends_with(".buf"))
         .collect();
 
-    let sub_dirs: Vec<_> = dir.read_dir()
+    let sub_dirs: Vec<_> = dir
+        .read_dir()
         .unwrap()
         .map(|res| res.unwrap().path())
         .filter(|path| path.is_dir())
