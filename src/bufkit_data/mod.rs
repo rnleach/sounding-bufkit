@@ -146,22 +146,16 @@ fn combine_data(ua: &UpperAir, sd: &SurfaceData) -> Analysis {
         check_missing(ua.elevation),
     );
 
-    let sfc_wind_spd = check_missing(sd.uwind)
-        .and_then(|u| check_missing(sd.vwind).and_then(|v| some(u.hypot(v))))
-        .and_then(|mps| some(mps * 1.94384)); // convert m/s to knots
-
-    let sfc_wind_dir = check_missing(sd.uwind)
-        .and_then(|u| check_missing(sd.vwind).and_then(|v| some(v.atan2(u).to_degrees())))
-        .and_then(|mut dir| {
-            // map into 0 -> 360 range.
-            while dir < 0.0 {
-                dir += 360.0;
-            }
-            while dir > 360.0 {
-                dir -= 360.0;
-            }
-            some(dir)
-        });
+    let (sfc_wind_dir, sfc_wind_spd) = {
+        let u = check_missing(sd.uwind).into_option();
+        let v = check_missing(sd.vwind).into_option();
+        if let (Some(u), Some(v)) = (u,v){
+            let (dir, spd) = ::metfor::uv_to_spd_dir(u, v);
+            (some(dir), some(spd))
+        } else {
+            (none(), none())
+        }
+    };
 
     let strm_motion_spd = check_missing(sd.u_storm)
         .and_then(|u| check_missing(sd.v_storm).and_then(|v| some(u.hypot(v))))

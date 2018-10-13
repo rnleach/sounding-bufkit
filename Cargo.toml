@@ -1,6 +1,6 @@
 [package]
 name = "sounding-bufkit"
-version = "0.8.1"
+version = "0.8.2"
 authors = ["Ryan Leach <clumsycodemonkey@gmail.com>"]
 description = """Library to parse and load Bufkit sounding files."""
 repository = "https://github.com/rnleach/sounding-bufkit.git"
@@ -11,6 +11,7 @@ categories = ["science"]
 keywords = ["weather","sounding","meteorology", "skew-t", "Bufkit"]
 
 [dependencies]
+metfor = "^0.3.2"
 sounding-base = "^0.7"
 sounding-analysis = "^0.8"
 chrono="^0.4"
