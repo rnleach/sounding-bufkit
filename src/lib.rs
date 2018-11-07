@@ -14,7 +14,6 @@ pub use error::*;
 // Internal use only
 //
 extern crate chrono;
-extern crate failure;
 extern crate optional;
 
 extern crate metfor;

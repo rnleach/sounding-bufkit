@@ -6,6 +6,7 @@ mod station_info;
 
 use chrono::NaiveDateTime;
 use error::*;
+use std::error::Error;
 
 /// All the values from a parsed sounding in one struct.
 #[derive(Debug)]
@@ -48,7 +49,7 @@ pub struct UpperAir {
 
 impl UpperAir {
     /// Given a string slice, attempt to parse it into a UpperAir.
-    pub fn parse(text: &str) -> Result<UpperAir, Error> {
+    pub fn parse(text: &str) -> Result<UpperAir, Box<dyn Error>> {
         use self::indexes::Indexes;
         use self::profile::Profile;
         use self::station_info::StationInfo;

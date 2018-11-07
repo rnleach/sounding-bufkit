@@ -1,37 +1,25 @@
 //! Errors specific to the sounding-bufkit crate.
+use std::error::Error;
 use std::fmt::{Display, Formatter, Result};
-
-use failure::{Backtrace, Fail};
-
-pub use failure::Error;
 
 /// Basic error originating in this crate with a backtrace.
 #[derive(Debug)]
-pub struct BufkitFileError {
-    backtrace: Backtrace,
-}
+pub struct BufkitFileError {}
 
 impl BufkitFileError {
     /// Createa new BufkitFileError.
     pub fn new() -> BufkitFileError {
-        BufkitFileError {
-            backtrace: Backtrace::new(),
-        }
+        BufkitFileError {}
     }
 }
 
 impl Display for BufkitFileError {
     fn fmt(&self, f: &mut Formatter) -> Result {
-        writeln!(f, "Error parsing bufkit file.")?;
-        write!(f, "{}", self.backtrace)
+        writeln!(f, "Error parsing bufkit file.")
     }
 }
 
-impl Fail for BufkitFileError {
-    fn backtrace(&self) -> Option<&Backtrace> {
-        Some(&self.backtrace)
-    }
-}
+impl Error for BufkitFileError {}
 
 impl Default for BufkitFileError {
     fn default() -> Self {

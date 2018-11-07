@@ -2,6 +2,7 @@
 
 use bufkit_data::surface::{SfcColumns, SurfaceData};
 use error::*;
+use std::error::Error;
 
 /// Represents the section of a string that represents surface data in a bufkit file.
 pub struct SurfaceSection<'a> {
@@ -40,7 +41,7 @@ impl<'a> SurfaceSection<'a> {
     }
 
     /// Validate the surface section of a sounding.
-    pub fn validate_section(&self) -> Result<(), Error> {
+    pub fn validate_section(&self) -> Result<(), Box<dyn Error>> {
         let mut iter = self.into_iter();
 
         loop {

@@ -1,5 +1,5 @@
 //! Utilites for parsing a sounding.
-use failure::Error;
+use std::error::Error;
 
 use chrono::{NaiveDate, NaiveDateTime};
 use error::*;
@@ -74,7 +74,7 @@ fn test_parse_kv() {
 }
 
 /// Parse an f64 value.
-pub fn parse_f64<'a, 'b>(src: &'a str, key: &'b str) -> Result<(f64, &'a str), Error> {
+pub fn parse_f64<'a, 'b>(src: &'a str, key: &'b str) -> Result<(f64, &'a str), Box<dyn Error>> {
     use std::str::FromStr;
 
     let (val_to_parse, head) = parse_kv(
@@ -111,7 +111,7 @@ fn test_parse_f64() {
 }
 
 /// Parse an i32 value.
-pub fn parse_i32<'a, 'b>(src: &'a str, key: &'b str) -> Result<(i32, &'a str), Error> {
+pub fn parse_i32<'a, 'b>(src: &'a str, key: &'b str) -> Result<(i32, &'a str), Box<dyn Error>> {
     use std::str::FromStr;
 
     let (val_to_parse, head) = parse_kv(
@@ -149,7 +149,7 @@ fn test_parse_i32() {
 
 #[cfg_attr(feature = "cargo-clippy", allow(doc_markdown))]
 /// Parse a string of the form "YYmmdd/hhMM" to a `NaiveDateTime`.
-pub fn parse_naive_date_time(src: &str) -> Result<NaiveDateTime, Error> {
+pub fn parse_naive_date_time(src: &str) -> Result<NaiveDateTime, Box<dyn Error>> {
     use std::str::FromStr;
 
     let val_to_parse = src.trim();

@@ -1,6 +1,7 @@
 //! Parses the *variables* vs height/pressure, or the core part of the sounding.
 
 use error::*;
+use std::error::Error;
 
 #[derive(Debug)]
 pub struct Profile {
@@ -18,7 +19,7 @@ pub struct Profile {
 
 impl Profile {
     /// Given a String or slice of characters, parse them into an Profile struct.
-    pub fn parse(src: &str) -> Result<Profile, Error> {
+    pub fn parse(src: &str) -> Result<Profile, Box<dyn Error>> {
         let (header, values) = Profile::split_header_and_values(src)?;
         let cols = Profile::get_column_indexes(header)?;
         Profile::parse_values(values, &cols)
@@ -59,7 +60,7 @@ impl Profile {
     }
 
     /// Given a string slice of values and some column indexes, parse them!
-    fn parse_values(values: &str, cols: &ProfileColIndexes) -> Result<Profile, Error> {
+    fn parse_values(values: &str, cols: &ProfileColIndexes) -> Result<Profile, Box<dyn Error>> {
         use std::str::FromStr;
 
         // Current GFS soundings have 64 levels of upper air data (2017)
