@@ -1,5 +1,6 @@
 //! Module for reading a bufkit file and breaking it into smaller pieces for parsing later.
 use std::collections::HashMap;
+use std::error::Error;
 use std::path::Path;
 
 use optional::{none, some, Optioned};
@@ -25,7 +26,7 @@ pub struct BufkitFile {
 
 impl BufkitFile {
     /// Load a file into memory.
-    pub fn load(path: &Path) -> Result<BufkitFile, Error> {
+    pub fn load(path: &Path) -> Result<BufkitFile, Box<dyn Error>> {
         use std::fs::File;
         use std::io::prelude::Read;
         use std::io::BufReader;
@@ -41,7 +42,7 @@ impl BufkitFile {
     }
 
     /// Validate the whole file, ensure it is parseable and do some sanity checks.
-    pub fn validate_file_format(&self) -> Result<(), Error> {
+    pub fn validate_file_format(&self) -> Result<(), Box<dyn Error>> {
         let data = self.data()?;
         data.validate()?;
 
@@ -49,7 +50,7 @@ impl BufkitFile {
     }
 
     /// Get a bufkit data object from this file.
-    pub fn data(&self) -> Result<BufkitData, Error> {
+    pub fn data(&self) -> Result<BufkitData, Box<dyn Error>> {
         BufkitData::new(&self.file_text)
     }
 
@@ -70,14 +71,14 @@ pub struct BufkitData<'a> {
 
 impl<'a> BufkitData<'a> {
     /// Validate the whole string, ensure it is parseable and do some sanity checks.
-    pub fn validate(&self) -> Result<(), Error> {
+    pub fn validate(&self) -> Result<(), Box<dyn Error>> {
         self.upper_air.validate_section()?;
         self.surface.validate_section()?;
         Ok(())
     }
 
     /// Create a new data representation from a string
-    pub fn new(text: &str) -> Result<BufkitData, Error> {
+    pub fn new(text: &str) -> Result<BufkitData, Box<dyn Error>> {
         let break_point = BufkitData::find_break_point(text)?;
         let data = BufkitData::new_with_break_point(text, break_point)?;
         Ok(data)
@@ -178,29 +179,68 @@ fn combine_data(ua: &UpperAir, sd: &SurfaceData) -> Analysis {
         .set_station_info(station)
         .set_valid_time(ua.valid_time)
         .set_lead_time(check_missing_i32(ua.lead_time))
-
         // Upper air
-        .set_profile(Profile::Pressure,
-            ua.pressure.iter().map(|val| check_missing(*val)).collect::<Vec<_>>())
-        .set_profile(Profile::Temperature,
-            ua.temperature.iter().map(|val| check_missing(*val)).collect::<Vec<_>>())
-        .set_profile(Profile::WetBulb,
-            ua.wet_bulb.iter().map(|val| check_missing(*val)).collect::<Vec<_>>())
-        .set_profile(Profile::DewPoint,
-            ua.dew_point.iter().map(|val| check_missing(*val)).collect::<Vec<_>>())
-        .set_profile(Profile::ThetaE,
-            ua.theta_e.iter().map(|val| check_missing(*val)).collect::<Vec<_>>())
-        .set_profile(Profile::WindDirection,
-            ua.direction.iter().map(|val| check_missing(*val)).collect::<Vec<_>>())
-        .set_profile(Profile::WindSpeed,
-            ua.speed.iter().map(|val| check_missing(*val)).collect::<Vec<_>>())
-        .set_profile(Profile::PressureVerticalVelocity,
-            ua.omega.iter().map(|val| check_missing(*val)).collect::<Vec<_>>())
-        .set_profile(Profile::GeopotentialHeight,
-            ua.height.iter().map(|val| check_missing(*val)).collect::<Vec<_>>())
-        .set_profile(Profile::CloudFraction,
-            ua.cloud_fraction.iter().map(|val| check_missing(*val)).collect::<Vec<_>>())
-
+        .set_profile(
+            Profile::Pressure,
+            ua.pressure
+                .iter()
+                .map(|val| check_missing(*val))
+                .collect::<Vec<_>>(),
+        ).set_profile(
+            Profile::Temperature,
+            ua.temperature
+                .iter()
+                .map(|val| check_missing(*val))
+                .collect::<Vec<_>>(),
+        ).set_profile(
+            Profile::WetBulb,
+            ua.wet_bulb
+                .iter()
+                .map(|val| check_missing(*val))
+                .collect::<Vec<_>>(),
+        ).set_profile(
+            Profile::DewPoint,
+            ua.dew_point
+                .iter()
+                .map(|val| check_missing(*val))
+                .collect::<Vec<_>>(),
+        ).set_profile(
+            Profile::ThetaE,
+            ua.theta_e
+                .iter()
+                .map(|val| check_missing(*val))
+                .collect::<Vec<_>>(),
+        ).set_profile(
+            Profile::WindDirection,
+            ua.direction
+                .iter()
+                .map(|val| check_missing(*val))
+                .collect::<Vec<_>>(),
+        ).set_profile(
+            Profile::WindSpeed,
+            ua.speed
+                .iter()
+                .map(|val| check_missing(*val))
+                .collect::<Vec<_>>(),
+        ).set_profile(
+            Profile::PressureVerticalVelocity,
+            ua.omega
+                .iter()
+                .map(|val| check_missing(*val))
+                .collect::<Vec<_>>(),
+        ).set_profile(
+            Profile::GeopotentialHeight,
+            ua.height
+                .iter()
+                .map(|val| check_missing(*val))
+                .collect::<Vec<_>>(),
+        ).set_profile(
+            Profile::CloudFraction,
+            ua.cloud_fraction
+                .iter()
+                .map(|val| check_missing(*val))
+                .collect::<Vec<_>>(),
+        )
         // Surface data
         .set_surface_value(Surface::MSLP, check_missing(sd.mslp))
         .set_surface_value(Surface::Temperature, check_missing(sd.temperature))

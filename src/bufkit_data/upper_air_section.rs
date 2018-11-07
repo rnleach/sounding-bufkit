@@ -1,7 +1,7 @@
 //! Deals with the text and parsing of the upper section in a bufkit file.
 
 use bufkit_data::upper_air::UpperAir;
-use error::*;
+use std::error::Error;
 
 /// Represents the section of a string that represents sounding data in a bufkit file.
 pub struct UpperAirSection<'a> {
@@ -15,7 +15,7 @@ impl<'a> UpperAirSection<'a> {
     }
 
     /// Validate the upper air section
-    pub fn validate_section(&self) -> Result<(), Error> {
+    pub fn validate_section(&self) -> Result<(), Box<dyn Error>> {
         let mut iter = self.into_iter();
 
         while let Some(chunk) = iter.get_next_chunk() {

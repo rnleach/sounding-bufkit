@@ -1,8 +1,7 @@
 //! Parse the station info section of a bufkit upper air section.
 
 use chrono::NaiveDateTime;
-
-use error::*;
+use std::error::Error;
 
 /// Information related to the geographic location of the sounding.
 #[derive(Debug)]
@@ -17,7 +16,7 @@ pub struct StationInfo {
 
 impl StationInfo {
     /// Given a String or slice of characters, parse them into a StationInfo struct.
-    pub fn parse(src: &str) -> Result<StationInfo, Error> {
+    pub fn parse(src: &str) -> Result<StationInfo, Box<dyn Error>> {
         // This method assumes that these values are ALWAYS in this order. If it turns out that
         // they are not, it will probably error! The easy fix would be to replace head with src
         // in all of the parse_* function calls below, at the expense of a probably slower parsing

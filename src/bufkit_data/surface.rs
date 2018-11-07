@@ -2,6 +2,7 @@
 
 use chrono::{NaiveDate, NaiveDateTime};
 use error::*;
+use std::error::Error;
 
 /// Surface data.
 #[derive(Debug, PartialEq)]
@@ -98,7 +99,7 @@ impl SurfaceData {
     }
 
     /// Parse a few values stored as strings in the `tokens` iterator.
-    pub fn parse_values(tokens: &str, cols: &SfcColumns) -> Result<SurfaceData, Error> {
+    pub fn parse_values(tokens: &str, cols: &SfcColumns) -> Result<SurfaceData, Box<dyn Error>> {
         use std::str::FromStr;
         let mut tokens = tokens.split_whitespace();
 
