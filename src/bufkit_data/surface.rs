@@ -1,7 +1,7 @@
 //! Module for parsing surface data in a bufkit file.
 
-use chrono::{NaiveDate, NaiveDateTime};
 use crate::error::*;
+use chrono::{NaiveDate, NaiveDateTime};
 use std::error::Error;
 
 /// Surface data.

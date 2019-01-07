@@ -4,8 +4,8 @@ mod indexes;
 mod profile;
 mod station_info;
 
-use chrono::NaiveDateTime;
 use crate::error::*;
+use chrono::NaiveDateTime;
 use std::error::Error;
 
 /// All the values from a parsed sounding in one struct.

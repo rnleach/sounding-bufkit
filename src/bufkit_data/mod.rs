@@ -186,55 +186,64 @@ fn combine_data(ua: &UpperAir, sd: &SurfaceData) -> Analysis {
                 .iter()
                 .map(|val| check_missing(*val))
                 .collect::<Vec<_>>(),
-        ).set_profile(
+        )
+        .set_profile(
             Profile::Temperature,
             ua.temperature
                 .iter()
                 .map(|val| check_missing(*val))
                 .collect::<Vec<_>>(),
-        ).set_profile(
+        )
+        .set_profile(
             Profile::WetBulb,
             ua.wet_bulb
                 .iter()
                 .map(|val| check_missing(*val))
                 .collect::<Vec<_>>(),
-        ).set_profile(
+        )
+        .set_profile(
             Profile::DewPoint,
             ua.dew_point
                 .iter()
                 .map(|val| check_missing(*val))
                 .collect::<Vec<_>>(),
-        ).set_profile(
+        )
+        .set_profile(
             Profile::ThetaE,
             ua.theta_e
                 .iter()
                 .map(|val| check_missing(*val))
                 .collect::<Vec<_>>(),
-        ).set_profile(
+        )
+        .set_profile(
             Profile::WindDirection,
             ua.direction
                 .iter()
                 .map(|val| check_missing(*val))
                 .collect::<Vec<_>>(),
-        ).set_profile(
+        )
+        .set_profile(
             Profile::WindSpeed,
             ua.speed
                 .iter()
                 .map(|val| check_missing(*val))
                 .collect::<Vec<_>>(),
-        ).set_profile(
+        )
+        .set_profile(
             Profile::PressureVerticalVelocity,
             ua.omega
                 .iter()
                 .map(|val| check_missing(*val))
                 .collect::<Vec<_>>(),
-        ).set_profile(
+        )
+        .set_profile(
             Profile::GeopotentialHeight,
             ua.height
                 .iter()
                 .map(|val| check_missing(*val))
                 .collect::<Vec<_>>(),
-        ).set_profile(
+        )
+        .set_profile(
             Profile::CloudFraction,
             ua.cloud_fraction
                 .iter()

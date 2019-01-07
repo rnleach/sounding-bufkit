@@ -1,8 +1,8 @@
 //! Utilites for parsing a sounding.
 use std::error::Error;
 
-use chrono::{NaiveDate, NaiveDateTime};
 use crate::error::*;
+use chrono::{NaiveDate, NaiveDateTime};
 
 /// Isolate a value into a sub-string for further parsing.
 ///
