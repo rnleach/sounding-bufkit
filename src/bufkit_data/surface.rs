@@ -1,7 +1,7 @@
 //! Module for parsing surface data in a bufkit file.
 
 use chrono::{NaiveDate, NaiveDateTime};
-use error::*;
+use crate::error::*;
 use std::error::Error;
 
 /// Surface data.
@@ -108,7 +108,7 @@ impl SurfaceData {
         for i in 0..cols.num_cols() {
             if let Some(token) = tokens.next() {
                 use self::SfcColName::*;
-                use parse_util::*;
+                use crate::parse_util::*;
                 let _dummy: f64; // Used just to check that there is a valid value there.
 
                 match cols.names[i] {

@@ -5,7 +5,7 @@ mod profile;
 mod station_info;
 
 use chrono::NaiveDateTime;
-use error::*;
+use crate::error::*;
 use std::error::Error;
 
 /// All the values from a parsed sounding in one struct.
@@ -53,7 +53,7 @@ impl UpperAir {
         use self::indexes::Indexes;
         use self::profile::Profile;
         use self::station_info::StationInfo;
-        use parse_util::find_blank_line;
+        use crate::parse_util::find_blank_line;
 
         let mut break_point = find_blank_line(text).ok_or_else(BufkitFileError::new)?;
         let (station_info_section, the_rest) = text.split_at(break_point);

@@ -1,6 +1,6 @@
 //! Parses the *variables* vs height/pressure, or the core part of the sounding.
 
-use error::*;
+use crate::error::*;
 use std::error::Error;
 
 #[derive(Debug)]

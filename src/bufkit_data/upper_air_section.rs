@@ -1,6 +1,6 @@
 //! Deals with the text and parsing of the upper section in a bufkit file.
 
-use bufkit_data::upper_air::UpperAir;
+use crate::bufkit_data::upper_air::UpperAir;
 use std::error::Error;
 
 /// Represents the section of a string that represents sounding data in a bufkit file.

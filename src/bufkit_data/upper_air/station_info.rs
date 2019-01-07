@@ -30,7 +30,7 @@ impl StationInfo {
         // SELV - Station elevation (m)
         // STIM - Forecast hour
 
-        use parse_util::{parse_f64, parse_i32, parse_kv, parse_naive_date_time};
+        use crate::parse_util::{parse_f64, parse_i32, parse_kv, parse_naive_date_time};
 
         // Get station num
         let (station_num, head) = parse_i32(src, "STNM")?;

@@ -1,6 +1,6 @@
 //! Parses the string representing the upper air indexes from a bufkit file.
 
-use error::*;
+use crate::error::*;
 
 /// Several stability indexes.
 #[derive(Debug)]
@@ -41,7 +41,7 @@ impl Indexes {
         // LFCT - Level of free convection (hPa)
         // BRCH - Bulk Richardson number
 
-        use parse_util::parse_f64;
+        use crate::parse_util::parse_f64;
 
         let (show, head) = parse_f64(src, "SHOW").unwrap_or((-9999.0, src));
         let (lift, head) = parse_f64(head, "LIFT").unwrap_or((-9999.0, head));

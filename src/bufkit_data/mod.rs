@@ -17,7 +17,7 @@ use self::surface::SurfaceData;
 use self::surface_section::{SurfaceIterator, SurfaceSection};
 use self::upper_air::UpperAir;
 use self::upper_air_section::{UpperAirIterator, UpperAirSection};
-use error::*;
+use crate::error::*;
 
 /// Hold an entire bufkit file in memory.
 pub struct BufkitFile {

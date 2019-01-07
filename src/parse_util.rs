@@ -2,7 +2,7 @@
 use std::error::Error;
 
 use chrono::{NaiveDate, NaiveDateTime};
-use error::*;
+use crate::error::*;
 
 /// Isolate a value into a sub-string for further parsing.
 ///

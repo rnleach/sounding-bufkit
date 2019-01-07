@@ -1,7 +1,7 @@
 //! Deals with the text and parsing of the surface section in a bufkit file.
 
-use bufkit_data::surface::{SfcColumns, SurfaceData};
-use error::*;
+use crate::bufkit_data::surface::{SfcColumns, SurfaceData};
+use crate::error::*;
 use std::error::Error;
 
 /// Represents the section of a string that represents surface data in a bufkit file.
@@ -78,7 +78,7 @@ pub struct SurfaceIterator<'a> {
 
 impl<'a> SurfaceIterator<'a> {
     fn get_next_chunk(&mut self) -> Result<Option<&'a str>, BufkitFileError> {
-        use parse_util::find_next_n_tokens;
+        use crate::parse_util::find_next_n_tokens;
         if let Some(brk) = find_next_n_tokens(self.remaining, self.columns.num_cols())? {
             let next_chunk = &self.remaining[0..brk];
             self.remaining = &self.remaining[brk..];

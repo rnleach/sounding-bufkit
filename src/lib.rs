@@ -7,8 +7,8 @@
 // API
 //
 
-pub use bufkit_data::{BufkitData, BufkitFile, SoundingIterator};
-pub use error::*;
+pub use crate::bufkit_data::{BufkitData, BufkitFile, SoundingIterator};
+pub use crate::error::*;
 
 //
 // Internal use only
