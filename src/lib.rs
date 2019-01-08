@@ -13,12 +13,6 @@ pub use crate::error::*;
 //
 // Internal use only
 //
-extern crate chrono;
-extern crate optional;
-
-extern crate metfor;
-extern crate sounding_analysis;
-extern crate sounding_base;
 
 mod bufkit_data;
 mod error;

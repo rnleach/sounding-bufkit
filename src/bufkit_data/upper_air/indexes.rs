@@ -1,23 +1,25 @@
 //! Parses the string representing the upper air indexes from a bufkit file.
 
 use crate::error::*;
+use metfor::{Celsius, CelsiusDiff, HectoPascal, JpKg, Kelvin, Mm};
+use optional::{none, Optioned};
 
 /// Several stability indexes.
 #[derive(Debug)]
 pub struct Indexes {
-    pub show: f64, // Showalter index
-    pub li: f64,   // Lifted index
-    pub swet: f64, // Severe Weather Threat index
-    pub kinx: f64, // K-index
-    pub lclp: f64, // Lifting Condensation Level (hPa)
-    pub pwat: f64, // Precipitable water (mm)
-    pub totl: f64, // Total-Totals
-    pub cape: f64, // Convective Available Potential Energy
-    pub lclt: f64, // Temperature at LCL (K)
-    pub cins: f64, // Convective Inhibitive Energy
-    pub eqlv: f64, // Equilibrium Level (hPa)
-    pub lfc: f64,  // Level of Free Convection (hPa)
-    pub brch: f64, // Bulk Richardson Number
+    pub show: Optioned<CelsiusDiff>, // Showalter index
+    pub li: Optioned<CelsiusDiff>,   // Lifted index
+    pub swet: Optioned<f64>,         // Severe Weather Threat index
+    pub kinx: Optioned<Celsius>,     // K-index
+    pub lclp: Optioned<HectoPascal>, // Lifting Condensation Level (hPa)
+    pub pwat: Optioned<Mm>,          // Precipitable water (mm)
+    pub totl: Optioned<f64>,         // Total-Totals
+    pub cape: Optioned<JpKg>,        // Convective Available Potential Energy
+    pub lclt: Optioned<Kelvin>,      // Temperature at LCL (K)
+    pub cins: Optioned<JpKg>,        // Convective Inhibitive Energy
+    pub eqlv: Optioned<HectoPascal>, // Equilibrium Level (hPa)
+    pub lfc: Optioned<HectoPascal>,  // Level of Free Convection (hPa)
+    pub brch: Optioned<f64>,         // Bulk Richardson Number
 }
 
 impl Indexes {
@@ -43,33 +45,33 @@ impl Indexes {
 
         use crate::parse_util::parse_f64;
 
-        let (show, head) = parse_f64(src, "SHOW").unwrap_or((-9999.0, src));
-        let (lift, head) = parse_f64(head, "LIFT").unwrap_or((-9999.0, head));
-        let (swet, head) = parse_f64(head, "SWET").unwrap_or((-9999.0, head));
-        let (kinx, head) = parse_f64(head, "KINX").unwrap_or((-9999.0, head));
-        let (lclp, head) = parse_f64(head, "LCLP").unwrap_or((-9999.0, head));
-        let (pwat, head) = parse_f64(head, "PWAT").unwrap_or((-9999.0, head));
-        let (totl, head) = parse_f64(head, "TOTL").unwrap_or((-9999.0, head));
-        let (cape, head) = parse_f64(head, "CAPE").unwrap_or((-9999.0, head));
-        let (lclt, head) = parse_f64(head, "LCLT").unwrap_or((-9999.0, head));
-        let (cins, head) = parse_f64(head, "CINS").unwrap_or((-9999.0, head));
-        let (eqlv, head) = parse_f64(head, "EQLV").unwrap_or((-9999.0, head));
-        let (lfct, head) = parse_f64(head, "LFCT").unwrap_or((-9999.0, head));
-        let (brch, _) = parse_f64(head, "BRCH").unwrap_or((-9999.0, head));
+        let (show, head) = parse_f64(src, "SHOW").unwrap_or((none(), src));
+        let (lift, head) = parse_f64(head, "LIFT").unwrap_or((none(), head));
+        let (swet, head) = parse_f64(head, "SWET").unwrap_or((none(), head));
+        let (kinx, head) = parse_f64(head, "KINX").unwrap_or((none(), head));
+        let (lclp, head) = parse_f64(head, "LCLP").unwrap_or((none(), head));
+        let (pwat, head) = parse_f64(head, "PWAT").unwrap_or((none(), head));
+        let (totl, head) = parse_f64(head, "TOTL").unwrap_or((none(), head));
+        let (cape, head) = parse_f64(head, "CAPE").unwrap_or((none(), head));
+        let (lclt, head) = parse_f64(head, "LCLT").unwrap_or((none(), head));
+        let (cins, head) = parse_f64(head, "CINS").unwrap_or((none(), head));
+        let (eqlv, head) = parse_f64(head, "EQLV").unwrap_or((none(), head));
+        let (lfct, head) = parse_f64(head, "LFCT").unwrap_or((none(), head));
+        let (brch, _) = parse_f64(head, "BRCH").unwrap_or((none(), head));
 
         Ok(Indexes {
-            show,
-            li: lift,
+            show: show.map_t(CelsiusDiff),
+            li: lift.map_t(CelsiusDiff),
             swet,
-            kinx,
-            lclp,
-            pwat,
+            kinx: kinx.map_t(Celsius),
+            lclp: lclp.map_t(HectoPascal),
+            pwat: pwat.map_t(Mm),
             totl,
-            cape,
-            lclt,
-            cins,
-            eqlv,
-            lfc: lfct,
+            cape: cape.map_t(JpKg),
+            lclt: lclt.map_t(Kelvin),
+            cins: cins.map_t(JpKg),
+            eqlv: eqlv.map_t(HectoPascal),
+            lfc: lfct.map_t(HectoPascal),
             brch,
         })
     }
@@ -77,6 +79,8 @@ impl Indexes {
 
 #[test]
 fn test_indexes_parse() {
+    use optional::some;
+
     let test_data = "
         SHOW = 8.12 LIFT = 8.00 SWET = 39.08 KINX = 14.88
         LCLP = 780.77 PWAT = 9.28 TOTL = 39.55 CAPE = 0.00
@@ -102,19 +106,19 @@ fn test_indexes_parse() {
         brch,
     } = indexes.unwrap();
 
-    assert_eq!(show, 8.12);
-    assert_eq!(li, 8.0);
-    assert_eq!(swet, 39.08);
-    assert_eq!(kinx, 14.88);
-    assert_eq!(lclp, 780.77);
-    assert_eq!(pwat, 9.28);
-    assert_eq!(totl, 39.55);
-    assert_eq!(cape, 0.00);
-    assert_eq!(lclt, 272.88);
-    assert_eq!(cins, 0.00);
-    assert_eq!(eqlv, -9999.0);
-    assert_eq!(lfc, -9999.0);
-    assert_eq!(brch, 0.00);
+    assert_eq!(show, some(CelsiusDiff(8.12)));
+    assert_eq!(li, some(CelsiusDiff(8.0)));
+    assert_eq!(swet, some(39.08));
+    assert_eq!(kinx, some(Celsius(14.88)));
+    assert_eq!(lclp, some(HectoPascal(780.77)));
+    assert_eq!(pwat, some(Mm(9.28)));
+    assert_eq!(totl, some(39.55));
+    assert_eq!(cape, some(JpKg(0.00)));
+    assert_eq!(lclt, some(Kelvin(272.88)));
+    assert_eq!(cins, some(JpKg(0.00)));
+    assert!(eqlv.is_none());
+    assert!(lfc.is_none());
+    assert_eq!(brch, some(0.00));
 
     let test_data = "
         SHOW = 9.67 LIFT = 9.84 SWET = 33.41 KINX = 3.88
@@ -141,17 +145,17 @@ fn test_indexes_parse() {
         brch,
     } = indexes.unwrap();
 
-    assert_eq!(show, 9.67);
-    assert_eq!(li, 9.84);
-    assert_eq!(swet, 33.41);
-    assert_eq!(kinx, 3.88);
-    assert_eq!(lclp, 822.95);
-    assert_eq!(pwat, 9.52);
-    assert_eq!(totl, 37.25);
-    assert_eq!(cape, 0.00);
-    assert_eq!(lclt, 273.49);
-    assert_eq!(cins, 0.00);
-    assert_eq!(eqlv, -9999.0);
-    assert_eq!(lfc, -9999.0);
-    assert_eq!(brch, 0.00);
+    assert_eq!(show, some(CelsiusDiff(9.67)));
+    assert_eq!(li, some(CelsiusDiff(9.84)));
+    assert_eq!(swet, some(33.41));
+    assert_eq!(kinx, some(Celsius(3.88)));
+    assert_eq!(lclp, some(HectoPascal(822.95)));
+    assert_eq!(pwat, some(Mm(9.52)));
+    assert_eq!(totl, some(37.25));
+    assert_eq!(cape, some(JpKg(0.00)));
+    assert_eq!(lclt, some(Kelvin(273.49)));
+    assert_eq!(cins, some(JpKg(0.00)));
+    assert!(eqlv.is_none());
+    assert!(lfc.is_none());
+    assert_eq!(brch, some(0.00));
 }

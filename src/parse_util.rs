@@ -3,6 +3,27 @@ use std::error::Error;
 
 use crate::error::*;
 use chrono::{NaiveDate, NaiveDateTime};
+use optional::{none, some, Optioned};
+
+// Missing or no data values used in Bufkit files
+const MISSING_I32: i32 = -9999;
+const MISSING_F64: f64 = -9999.0;
+
+pub(crate) fn check_missing(val: f64) -> Optioned<f64> {
+    if val == MISSING_F64 {
+        none()
+    } else {
+        some(val)
+    }
+}
+
+pub(crate) fn check_missing_i32(val: i32) -> Option<i32> {
+    if val == MISSING_I32 {
+        None
+    } else {
+        Some(val)
+    }
+}
 
 /// Isolate a value into a sub-string for further parsing.
 ///
@@ -74,7 +95,10 @@ fn test_parse_kv() {
 }
 
 /// Parse an f64 value.
-pub fn parse_f64<'a, 'b>(src: &'a str, key: &'b str) -> Result<(f64, &'a str), Box<dyn Error>> {
+pub fn parse_f64<'a, 'b>(
+    src: &'a str,
+    key: &'b str,
+) -> Result<(Optioned<f64>, &'a str), Box<dyn Error>> {
     use std::str::FromStr;
 
     let (val_to_parse, head) = parse_kv(
@@ -83,7 +107,7 @@ pub fn parse_f64<'a, 'b>(src: &'a str, key: &'b str) -> Result<(f64, &'a str), B
         |c| char::is_digit(c, 10) || c == '-',
         |c| !(char::is_digit(c, 10) || c == '.' || c == '-'),
     )?;
-    let val = f64::from_str(val_to_parse)?;
+    let val = check_missing(f64::from_str(val_to_parse)?);
     Ok((val, head))
 }
 
@@ -96,14 +120,14 @@ fn test_parse_f64() {
          STIM = 0";
 
     if let Ok((lat, head)) = parse_f64(test_data, "SLAT") {
-        assert_eq!(lat, 46.92);
+        assert_eq!(lat, some(46.92));
         assert_eq!(head, " SLON = -114.08 SELV = 972.0 STIM = 0");
     } else {
         assert!(false, "There was an error parsing.");
     }
 
     if let Ok((lon, head)) = parse_f64(test_data, "SLON") {
-        assert_eq!(lon, -114.08);
+        assert_eq!(lon, some(-114.08));
         assert_eq!(head, " SELV = 972.0 STIM = 0");
     } else {
         assert!(false, "There was an error parsing.");

@@ -1,17 +1,19 @@
 //! Parse the station info section of a bufkit upper air section.
 
 use chrono::NaiveDateTime;
+use metfor::Meters;
+use optional::Optioned;
 use std::error::Error;
 
 /// Information related to the geographic location of the sounding.
 #[derive(Debug)]
 pub struct StationInfo {
-    pub num: i32,                  // station number, USAF number, eg 727730
-    pub valid_time: NaiveDateTime, // valid time of sounding
-    pub lead_time: i32,            // Forecast lead time in hours from model initialization
-    pub lat: f64,                  // latitude
-    pub lon: f64,                  // longitude
-    pub elevation: f64,            // elevation (m)
+    pub num: i32,                    // station number, USAF number, eg 727730
+    pub valid_time: NaiveDateTime,   // valid time of sounding
+    pub lead_time: i32,              // Forecast lead time in hours from model init
+    pub lat: Optioned<f64>,          // latitude
+    pub lon: Optioned<f64>,          // longitude
+    pub elevation: Optioned<Meters>, // elevation (m)
 }
 
 impl StationInfo {
@@ -61,7 +63,7 @@ impl StationInfo {
             lead_time: lt,
             lat,
             lon,
-            elevation: elv,
+            elevation: elv.map_t(Meters),
         })
     }
 }
@@ -69,6 +71,7 @@ impl StationInfo {
 #[test]
 fn test_station_info_parse() {
     use chrono::NaiveDate;
+    use optional::some;
 
     let test_data = "STID = STNM = 727730 TIME = 170401/0000
                      SLAT = 46.92 SLON = -114.08 SELV = 972.0
@@ -88,9 +91,9 @@ fn test_station_info_parse() {
     assert_eq!(num, 727730);
     assert_eq!(valid_time, NaiveDate::from_ymd(2017, 4, 1).and_hms(0, 0, 0));
     assert_eq!(lead_time, 0);
-    assert_eq!(lat, 46.92);
-    assert_eq!(lon, -114.08);
-    assert_eq!(elevation, 972.0);
+    assert_eq!(lat, some(46.92));
+    assert_eq!(lon, some(-114.08));
+    assert_eq!(elevation, some(Meters(972.0)));
 
     let test_data = "STID = KMSO STNM = 727730 TIME = 170404/1200
                      SLAT = 46.87 SLON = -114.16 SELV = 1335.0
@@ -113,7 +116,7 @@ fn test_station_info_parse() {
         NaiveDate::from_ymd(2017, 4, 4).and_hms(12, 0, 0)
     );
     assert_eq!(lead_time, 84);
-    assert_eq!(lat, 46.87);
-    assert_eq!(lon, -114.16);
-    assert_eq!(elevation, 1335.0);
+    assert_eq!(lat, some(46.87));
+    assert_eq!(lon, some(-114.16));
+    assert_eq!(elevation, some(Meters(1335.0)));
 }

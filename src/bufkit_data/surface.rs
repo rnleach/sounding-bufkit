@@ -2,32 +2,33 @@
 
 use crate::error::*;
 use chrono::{NaiveDate, NaiveDateTime};
+use metfor::{Celsius, HectoPascal, Kelvin, Knots, MetersPSec, Mm, WindSpdDir, WindUV};
+use optional::{none, Optioned};
 use std::error::Error;
 
 /// Surface data.
 #[derive(Debug, PartialEq)]
 pub struct SurfaceData {
-    pub station_num: i32,          // Same is in StationInfo
-    pub valid_time: NaiveDateTime, // Always assume UTC.
-    pub mslp: f64,                 // Surface pressure reduce to mean sea level
-    pub station_pres: f64,         // Surface pressure
-    pub low_cloud: f64,            // low cloud coverage percent
-    pub mid_cloud: f64,            // mid cloud coverage percent
-    pub hi_cloud: f64,             // high cloud coverage percent
-    pub uwind: f64,                // zonal surface wind (m/s)
-    pub vwind: f64,                // meridional surface wind (m/s)
-    pub temperature: f64,          // 2 meter temperature C
-    pub dewpoint: f64,             // 2 meter dew point C
+    pub station_num: i32,                    // Same is in StationInfo
+    pub valid_time: NaiveDateTime,           // Always assume UTC.
+    pub mslp: Optioned<HectoPascal>,         // Surface pressure reduce to mean sea level
+    pub station_pres: Optioned<HectoPascal>, // Surface pressure
+    pub low_cloud: Optioned<f64>,            // low cloud coverage percent
+    pub mid_cloud: Optioned<f64>,            // mid cloud coverage percent
+    pub hi_cloud: Optioned<f64>,             // high cloud coverage percent
+    pub wind: Optioned<WindSpdDir<Knots>>,   // surface wind direction and speed
+    pub temperature: Optioned<Celsius>,      // 2 meter temperature C
+    pub dewpoint: Optioned<Celsius>,         // 2 meter dew point C
 
-    pub skin_temp: f64,       // Skin temperature (C)
-    pub lyr_1_soil_temp: f64, // Layer 1 soil temperature (K)
-    pub snow_1hr: f64,        // 1-hour accumulated snowfall (Kg/m**2)
+    pub skin_temp: Optioned<Celsius>,      // Skin temperature (C)
+    pub lyr_1_soil_temp: Optioned<Kelvin>, // Layer 1 soil temperature (K)
+    pub snow_1hr: Optioned<f64>,           // 1-hour accumulated snowfall (Kg/m**2)
 
     // WTNS - Soil moisture availability (percent)
-    pub p01: f64,             // P01M - 1-hour total precipitation (mm)
-    pub c01: f64,             // C01M - 1-hour convective precipitation (mm)
-    pub lyr_2_soil_temp: f64, // STC2 - Layer 2 soil temperature (K)
-    pub snow_ratio: f64,      // SNRA - Snow ratio from explicit cloud scheme (percent)
+    pub p01: Optioned<Mm>, // P01M - 1-hour total precipitation (mm)
+    pub c01: Optioned<Mm>, // C01M - 1-hour convective precipitation (mm)
+    pub lyr_2_soil_temp: Optioned<Kelvin>, // STC2 - Layer 2 soil temperature (K)
+    pub snow_ratio: Optioned<f64>, // SNRA - Snow ratio from explicit cloud scheme (percent)
     // R01M - 1-hour accumulated surface runoff (mm)
     // BFGR - 1-hour accumulated baseflow-groundwater runoff (mm)
     // Q2MS - 2-meter specific humidity
@@ -35,13 +36,12 @@ pub struct SurfaceData {
     // WXTP - Ice pellets precipitation type (1=Ice pellets)
     // WXTZ - Freezing rain precipitation type (1=Freezing rain)
     // WXTR - Rain precipitation type (1=Rain)
-    pub u_storm: f64, // USTM - U-component of storm motion (m/s)
-    pub v_storm: f64, // VSTM - V-component of storm motion (m/s)
-    pub srh: f64,     // HLCY - Storm relative helicity (m**2/s**2)
-                      // SLLH - 1-hour surface evaporation (mm)
-                      // WSYM - Weather type symbol number
-                      // CDBP - Pressure at the base of cloud (hPa)
-                      // VSBK - Visibility (km)
+    pub storm_motion: Optioned<WindUV<MetersPSec>>, // Storm motion (m/s)
+    pub srh: Optioned<f64>,                         // HLCY - Storm relative helicity (m**2/s**2)
+                                                    // SLLH - 1-hour surface evaporation (mm)
+                                                    // WSYM - Weather type symbol number
+                                                    // CDBP - Pressure at the base of cloud (hPa)
+                                                    // VSBK - Visibility (km)
 }
 
 impl SurfaceData {
@@ -105,6 +105,12 @@ impl SurfaceData {
 
         let mut sd = SurfaceData::default();
 
+        let mut u_wind: Optioned<MetersPSec> = none();
+        let mut v_wind: Optioned<MetersPSec> = none();
+
+        let mut u_storm: Optioned<MetersPSec> = none();
+        let mut v_storm: Optioned<MetersPSec> = none();
+
         for i in 0..cols.num_cols() {
             if let Some(token) = tokens.next() {
                 use self::SfcColName::*;
@@ -115,30 +121,41 @@ impl SurfaceData {
                     NONE => _dummy = f64::from_str(token)?,
                     STN => sd.station_num = i32::from_str(token)?,
                     VALIDTIME => sd.valid_time = parse_naive_date_time(token)?,
-                    PMSL => sd.mslp = f64::from_str(token)?,
-                    PRES => sd.station_pres = f64::from_str(token)?,
-                    LCLD => sd.low_cloud = f64::from_str(token)?,
-                    MCLD => sd.mid_cloud = f64::from_str(token)?,
-                    HCLD => sd.hi_cloud = f64::from_str(token)?,
-                    UWND => sd.uwind = f64::from_str(token)?,
-                    VWND => sd.vwind = f64::from_str(token)?,
-                    T2MS => sd.temperature = f64::from_str(token)?,
-                    TD2M => sd.dewpoint = f64::from_str(token)?,
-                    SKTC => sd.skin_temp = f64::from_str(token)?,
-                    STC1 => sd.lyr_1_soil_temp = f64::from_str(token)?,
-                    SNFL => sd.snow_1hr = f64::from_str(token)?,
-                    P01M => sd.p01 = f64::from_str(token)?,
-                    C01M => sd.c01 = f64::from_str(token)?,
-                    STC2 => sd.lyr_2_soil_temp = f64::from_str(token)?,
-                    SNRA => sd.snow_ratio = f64::from_str(token)?,
-                    USTM => sd.u_storm = f64::from_str(token)?,
-                    VSTM => sd.v_storm = f64::from_str(token)?,
-                    HLCY => sd.srh = f64::from_str(token)?,
+                    PMSL => sd.mslp = check_missing(f64::from_str(token)?).map_t(HectoPascal),
+                    PRES => {
+                        sd.station_pres = check_missing(f64::from_str(token)?).map_t(HectoPascal)
+                    }
+                    LCLD => {
+                        sd.low_cloud = check_missing(f64::from_str(token)?).map_t(|val| val / 100.0)
+                    }
+                    MCLD => {
+                        sd.mid_cloud = check_missing(f64::from_str(token)?).map_t(|val| val / 100.0)
+                    }
+                    HCLD => {
+                        sd.hi_cloud = check_missing(f64::from_str(token)?).map_t(|val| val / 100.0)
+                    }
+                    UWND => u_wind = check_missing(f64::from_str(token)?).map_t(MetersPSec),
+                    VWND => v_wind = check_missing(f64::from_str(token)?).map_t(MetersPSec),
+                    T2MS => sd.temperature = check_missing(f64::from_str(token)?).map_t(Celsius),
+                    TD2M => sd.dewpoint = check_missing(f64::from_str(token)?).map_t(Celsius),
+                    SKTC => sd.skin_temp = check_missing(f64::from_str(token)?).map_t(Celsius),
+                    STC1 => sd.lyr_1_soil_temp = check_missing(f64::from_str(token)?).map_t(Kelvin),
+                    SNFL => sd.snow_1hr = check_missing(f64::from_str(token)?),
+                    P01M => sd.p01 = check_missing(f64::from_str(token)?).map_t(Mm),
+                    C01M => sd.c01 = check_missing(f64::from_str(token)?).map_t(Mm),
+                    STC2 => sd.lyr_2_soil_temp = check_missing(f64::from_str(token)?).map_t(Kelvin),
+                    SNRA => sd.snow_ratio = check_missing(f64::from_str(token)?),
+                    USTM => u_storm = check_missing(f64::from_str(token)?).map_t(MetersPSec),
+                    VSTM => v_storm = check_missing(f64::from_str(token)?).map_t(MetersPSec),
+                    HLCY => sd.srh = check_missing(f64::from_str(token)?),
                 };
             } else {
                 return Err(BufkitFileError::new().into());
             }
         }
+
+        sd.wind = u_wind.and_then(|u| v_wind.map_t(|v| WindSpdDir::<Knots>::from(WindUV { u, v })));
+        sd.storm_motion = u_storm.and_then(|u| v_storm.map_t(|v| WindUV { u, v }));
 
         Ok(sd)
     }
@@ -149,25 +166,23 @@ impl Default for SurfaceData {
         SurfaceData {
             station_num: ::std::i32::MIN,
             valid_time: NaiveDate::from_ymd(0, 1, 1).and_hms(0, 0, 0),
-            mslp: -9999.0,
-            station_pres: -9999.0,
-            low_cloud: -9999.0,
-            mid_cloud: -9999.0,
-            hi_cloud: -9999.0,
-            uwind: -9999.0,
-            vwind: -9999.0,
-            temperature: -9999.0,
-            dewpoint: -9999.0,
-            skin_temp: -9999.0,
-            lyr_1_soil_temp: -9999.0,
-            snow_1hr: -9999.0,
-            p01: -9999.0,
-            c01: -9999.0,
-            lyr_2_soil_temp: -9999.0,
-            snow_ratio: -9999.0,
-            u_storm: -9999.0,
-            v_storm: -9999.0,
-            srh: -9999.0,
+            mslp: none(),
+            station_pres: none(),
+            low_cloud: none(),
+            mid_cloud: none(),
+            hi_cloud: none(),
+            wind: none(),
+            temperature: none(),
+            dewpoint: none(),
+            skin_temp: none(),
+            lyr_1_soil_temp: none(),
+            snow_1hr: none(),
+            p01: none(),
+            c01: none(),
+            lyr_2_soil_temp: none(),
+            snow_ratio: none(),
+            storm_motion: none(),
+            srh: none(),
         }
     }
 }

@@ -20,14 +20,19 @@ fn test_bufkit_file() {
     for file in files {
         println!("Testing: {:?}", file);
         let example_file = BufkitFile::load(&file).expect("Error loading data.");
+        println!("Loaded");
         let data = example_file.data().unwrap();
+        println!("Got Data");
         if file.to_str().unwrap().contains("2017040100Z_gfs3_kmso") {
             // This file has been seeded with invalid data.
+            println!("Skipping");
             continue;
         }
         if file.to_str().unwrap().contains("nam") {
+            println!("Got a nam: {}", data.into_iter().count());
             assert_eq!(85, data.into_iter().count());
         } else if file.to_str().unwrap().contains("gfs") {
+            println!("Got a gfs: {}", data.into_iter().count());
             assert_eq!(61, data.into_iter().count());
         }
     }
