@@ -11,8 +11,8 @@ pub struct SurfaceSection<'a> {
 }
 
 impl<'a> SurfaceSection<'a> {
-    /// Create a new SurfaceSection.
-    pub fn new(text: &'a str) -> Result<SurfaceSection<'a>, BufkitFileError> {
+    /// Initialize a surface section for parsing.
+    pub fn init(text: &'a str) -> Result<SurfaceSection<'a>, BufkitFileError> {
         // Split the header off
         let mut header_end: usize = 0;
         let mut previous_char = 'x';

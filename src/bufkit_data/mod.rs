@@ -51,7 +51,7 @@ impl BufkitFile {
 
     /// Get a bufkit data object from this file.
     pub fn data(&self) -> Result<BufkitData, Box<dyn Error>> {
-        BufkitData::new(&self.file_text)
+        BufkitData::init(&self.file_text)
     }
 
     /// Get the raw string data from the file.
@@ -77,8 +77,8 @@ impl<'a> BufkitData<'a> {
         Ok(())
     }
 
-    /// Create a new data representation from a string
-    pub fn new(text: &str) -> Result<BufkitData, Box<dyn Error>> {
+    /// Initialize struct for parsing a sounding.
+    pub fn init(text: &str) -> Result<BufkitData, Box<dyn Error>> {
         let break_point = BufkitData::find_break_point(text)?;
         let data = BufkitData::new_with_break_point(text, break_point)?;
         Ok(data)
@@ -87,7 +87,7 @@ impl<'a> BufkitData<'a> {
     fn new_with_break_point(text: &str, break_point: usize) -> Result<BufkitData, BufkitFileError> {
         Ok(BufkitData {
             upper_air: UpperAirSection::new(&text[0..break_point]),
-            surface: SurfaceSection::new(&text[break_point..])?,
+            surface: SurfaceSection::init(&text[break_point..])?,
         })
     }
 
@@ -111,6 +111,7 @@ impl<'a> IntoIterator for &'a BufkitData<'a> {
     }
 }
 
+#[allow(clippy::needless_pass_by_value)]
 fn combine_data(ua: UpperAir, sd: SurfaceData) -> Analysis {
     let coords: Option<(f64, f64)> = ua
         .lat
@@ -184,9 +185,7 @@ fn combine_data(ua: UpperAir, sd: SurfaceData) -> Analysis {
     }
     check_and_add!(sd.srh, "StormRelativeHelicity", bufkit_anal);
 
-    let anal = Analysis::new(snd).with_provider_analysis(bufkit_anal);
-
-    anal
+    Analysis::new(snd).with_provider_analysis(bufkit_anal)
 }
 
 /// Iterator type for `BufkitData` that returns a `Sounding`.

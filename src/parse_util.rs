@@ -171,7 +171,6 @@ fn test_parse_i32() {
     }
 }
 
-#[cfg_attr(feature = "cargo-clippy", allow(doc_markdown))]
 /// Parse a string of the form "YYmmdd/hhMM" to a `NaiveDateTime`.
 pub fn parse_naive_date_time(src: &str) -> Result<NaiveDateTime, Box<dyn Error>> {
     use std::str::FromStr;
