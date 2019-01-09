@@ -50,7 +50,7 @@ impl BufkitFile {
     }
 
     /// Get a bufkit data object from this file.
-    pub fn data(&self) -> Result<BufkitData, Box<dyn Error>> {
+    pub fn data(&self) -> Result<BufkitData<'_>, Box<dyn Error>> {
         BufkitData::init(&self.file_text)
     }
 
@@ -78,13 +78,13 @@ impl<'a> BufkitData<'a> {
     }
 
     /// Initialize struct for parsing a sounding.
-    pub fn init(text: &str) -> Result<BufkitData, Box<dyn Error>> {
+    pub fn init(text: &str) -> Result<BufkitData<'_>, Box<dyn Error>> {
         let break_point = BufkitData::find_break_point(text)?;
         let data = BufkitData::new_with_break_point(text, break_point)?;
         Ok(data)
     }
 
-    fn new_with_break_point(text: &str, break_point: usize) -> Result<BufkitData, BufkitFileError> {
+    fn new_with_break_point(text: &str, break_point: usize) -> Result<BufkitData<'_>, BufkitFileError> {
         Ok(BufkitData {
             upper_air: UpperAirSection::new(&text[0..break_point]),
             surface: SurfaceSection::init(&text[break_point..])?,

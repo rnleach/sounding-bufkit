@@ -213,7 +213,7 @@ mod test {
 
         let test_data = get_valid_test_data();
 
-        let surface_section = SurfaceSection::new(test_data).unwrap();
+        let surface_section = SurfaceSection::init(test_data).unwrap();
 
         assert_eq!(surface_section.into_iter().count(), 6);
 
@@ -335,14 +335,14 @@ mod test {
 
     #[test]
     fn test_validate() {
-        let surface_section = SurfaceSection::new(get_valid_test_data()).unwrap();
+        let surface_section = SurfaceSection::init(get_valid_test_data()).unwrap();
         assert!(surface_section.validate_section().is_ok());
 
         println!("DOING TEST 1");
-        let surface_section = SurfaceSection::new(get_invalid_test_data1()).unwrap();
+        let surface_section = SurfaceSection::init(get_invalid_test_data1()).unwrap();
         assert!(!surface_section.validate_section().is_ok());
         println!("DONE TEST 1");
 
-        assert!(SurfaceSection::new(get_invalid_test_data2()).is_err());
+        assert!(SurfaceSection::init(get_invalid_test_data2()).is_err());
     }
 }
