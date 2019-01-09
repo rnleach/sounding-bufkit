@@ -84,7 +84,10 @@ impl<'a> BufkitData<'a> {
         Ok(data)
     }
 
-    fn new_with_break_point(text: &str, break_point: usize) -> Result<BufkitData<'_>, BufkitFileError> {
+    fn new_with_break_point(
+        text: &str,
+        break_point: usize,
+    ) -> Result<BufkitData<'_>, BufkitFileError> {
         Ok(BufkitData {
             upper_air: UpperAirSection::new(&text[0..break_point]),
             surface: SurfaceSection::init(&text[break_point..])?,
