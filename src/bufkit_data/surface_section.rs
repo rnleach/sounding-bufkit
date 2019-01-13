@@ -1,7 +1,7 @@
 //! Deals with the text and parsing of the surface section in a bufkit file.
 
-use bufkit_data::surface::{SfcColumns, SurfaceData};
-use error::*;
+use crate::bufkit_data::surface::{SfcColumns, SurfaceData};
+use crate::error::*;
 use std::error::Error;
 
 /// Represents the section of a string that represents surface data in a bufkit file.
@@ -11,8 +11,8 @@ pub struct SurfaceSection<'a> {
 }
 
 impl<'a> SurfaceSection<'a> {
-    /// Create a new SurfaceSection.
-    pub fn new(text: &'a str) -> Result<SurfaceSection<'a>, BufkitFileError> {
+    /// Initialize a surface section for parsing.
+    pub fn init(text: &'a str) -> Result<SurfaceSection<'a>, BufkitFileError> {
         // Split the header off
         let mut header_end: usize = 0;
         let mut previous_char = 'x';
@@ -78,7 +78,7 @@ pub struct SurfaceIterator<'a> {
 
 impl<'a> SurfaceIterator<'a> {
     fn get_next_chunk(&mut self) -> Result<Option<&'a str>, BufkitFileError> {
-        use parse_util::find_next_n_tokens;
+        use crate::parse_util::find_next_n_tokens;
         if let Some(brk) = find_next_n_tokens(self.remaining, self.columns.num_cols())? {
             let next_chunk = &self.remaining[0..brk];
             self.remaining = &self.remaining[brk..];
@@ -208,9 +208,12 @@ mod test {
     #[test]
     fn test_surface_through_iterator() {
         use chrono::{NaiveDate, NaiveDateTime};
+        use metfor::*;
+        use optional::some;
+
         let test_data = get_valid_test_data();
 
-        let surface_section = SurfaceSection::new(test_data).unwrap();
+        let surface_section = SurfaceSection::init(test_data).unwrap();
 
         assert_eq!(surface_section.into_iter().count(), 6);
 
@@ -237,63 +240,109 @@ mod test {
             surface_section
                 .into_iter()
                 .map(|sd| sd.mslp)
-                .collect::<Vec<f64>>(),
-            vec![1020.4, 1021.5, 1022.3, 1022.7, 1022.6, 1021.8]
+                .collect::<Vec<_>>(),
+            vec![
+                some(HectoPascal(1020.4)),
+                some(HectoPascal(1021.5)),
+                some(HectoPascal(1022.3)),
+                some(HectoPascal(1022.7)),
+                some(HectoPascal(1022.6)),
+                some(HectoPascal(1021.8))
+            ]
         );
         assert_eq!(
             surface_section
                 .into_iter()
                 .map(|sd| sd.station_pres)
-                .collect::<Vec<f64>>(),
-            vec![909.1, 909.4, 909.4, 909.3, 908.8, 908.6]
+                .collect::<Vec<_>>(),
+            vec![
+                some(HectoPascal(909.1)),
+                some(HectoPascal(909.4)),
+                some(HectoPascal(909.4)),
+                some(HectoPascal(909.3)),
+                some(HectoPascal(908.8)),
+                some(HectoPascal(908.6))
+            ]
         );
         assert_eq!(
             surface_section
                 .into_iter()
                 .map(|sd| sd.low_cloud)
-                .collect::<Vec<f64>>(),
-            vec![100.0, 52.0, 2.0, 1.0, 3.0, 4.0]
+                .collect::<Vec<_>>(),
+            vec![
+                some(1.0),
+                some(0.52),
+                some(0.02),
+                some(0.01),
+                some(0.03),
+                some(0.04)
+            ]
         );
         assert_eq!(
             surface_section
                 .into_iter()
                 .map(|sd| sd.mid_cloud)
-                .collect::<Vec<f64>>(),
-            vec![0.0; 6]
+                .collect::<Vec<_>>(),
+            vec![some(0.0); 6]
         );
         assert_eq!(
             surface_section
                 .into_iter()
                 .map(|sd| sd.hi_cloud)
-                .collect::<Vec<f64>>(),
-            vec![58.0, 61.0, 39.0, 33.0, 49.0, 77.0]
+                .collect::<Vec<_>>(),
+            vec![
+                some(0.58),
+                some(0.61),
+                some(0.39),
+                some(0.33),
+                some(0.49),
+                some(0.77)
+            ]
         );
         assert_eq!(
             surface_section
                 .into_iter()
-                .map(|sd| sd.uwind)
-                .collect::<Vec<f64>>(),
-            vec![0.9, 1.3, 1.1, 1.1, 0.6, 0.4]
-        );
-        assert_eq!(
-            surface_section
-                .into_iter()
-                .map(|sd| sd.vwind)
-                .collect::<Vec<f64>>(),
-            vec![-0.1, 0.5, 0.6, 0.6, 0.8, 0.6]
+                .map(|sd| sd.wind)
+                .collect::<Vec<_>>(),
+            vec![
+                some(WindSpdDir::<Knots>::from(WindUV {
+                    u: MetersPSec(0.9),
+                    v: MetersPSec(-0.1)
+                })),
+                some(WindSpdDir::<Knots>::from(WindUV {
+                    u: MetersPSec(1.3),
+                    v: MetersPSec(0.5)
+                })),
+                some(WindSpdDir::<Knots>::from(WindUV {
+                    u: MetersPSec(1.1),
+                    v: MetersPSec(0.6)
+                })),
+                some(WindSpdDir::<Knots>::from(WindUV {
+                    u: MetersPSec(1.1),
+                    v: MetersPSec(0.6)
+                })),
+                some(WindSpdDir::<Knots>::from(WindUV {
+                    u: MetersPSec(0.6),
+                    v: MetersPSec(0.8)
+                })),
+                some(WindSpdDir::<Knots>::from(WindUV {
+                    u: MetersPSec(0.4),
+                    v: MetersPSec(0.6)
+                }))
+            ]
         );
     }
 
     #[test]
     fn test_validate() {
-        let surface_section = SurfaceSection::new(get_valid_test_data()).unwrap();
+        let surface_section = SurfaceSection::init(get_valid_test_data()).unwrap();
         assert!(surface_section.validate_section().is_ok());
 
         println!("DOING TEST 1");
-        let surface_section = SurfaceSection::new(get_invalid_test_data1()).unwrap();
+        let surface_section = SurfaceSection::init(get_invalid_test_data1()).unwrap();
         assert!(!surface_section.validate_section().is_ok());
         println!("DONE TEST 1");
 
-        assert!(SurfaceSection::new(get_invalid_test_data2()).is_err());
+        assert!(SurfaceSection::init(get_invalid_test_data2()).is_err());
     }
 }

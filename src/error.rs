@@ -14,7 +14,7 @@ impl BufkitFileError {
 }
 
 impl Display for BufkitFileError {
-    fn fmt(&self, f: &mut Formatter) -> Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         writeln!(f, "Error parsing bufkit file.")
     }
 }

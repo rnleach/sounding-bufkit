@@ -4,47 +4,50 @@ mod indexes;
 mod profile;
 mod station_info;
 
+use crate::error::*;
 use chrono::NaiveDateTime;
-use error::*;
+use metfor::{
+    Celsius, CelsiusDiff, HectoPascal, JpKg, Kelvin, Knots, Meters, Mm, PaPS, WindSpdDir,
+};
+use optional::Optioned;
 use std::error::Error;
 
 /// All the values from a parsed sounding in one struct.
 #[derive(Debug)]
 pub struct UpperAir {
     // Station info
-    pub num: i32,                  // station number, USAF number, eg 727730
-    pub valid_time: NaiveDateTime, // valid time of sounding
-    pub lead_time: i32,            // Forecast lead time in hours from model initialization
-    pub lat: f64,                  // latitude
-    pub lon: f64,                  // longitude
-    pub elevation: f64,            // elevation (m)
+    pub num: i32,                    // station number, USAF number, eg 727730
+    pub valid_time: NaiveDateTime,   // valid time of sounding
+    pub lead_time: i32,              // Forecast lead time in hours from model init
+    pub lat: Optioned<f64>,          // latitude
+    pub lon: Optioned<f64>,          // longitude
+    pub elevation: Optioned<Meters>, // elevation (m)
 
     // Indexes
-    pub show: f64, // Showalter index
-    pub li: f64,   // Lifted index
-    pub swet: f64, // Severe Weather Threat index
-    pub kinx: f64, // K-index
-    pub lclp: f64, // Lifting Condensation Level (hPa)
-    pub pwat: f64, // Precipitable water (mm)
-    pub totl: f64, // Total-Totals
-    pub cape: f64, // Convective Available Potential Energy
-    pub lclt: f64, // Temperature at LCL (K)
-    pub cins: f64, // Convective Inhibitive Energy
-    pub eqlv: f64, // Equilibrium Level (hPa)
-    pub lfc: f64,  // Level of Free Convection (hPa)
-    pub brch: f64, // Bulk Richardson Number
+    pub show: Optioned<CelsiusDiff>, // Showalter index
+    pub li: Optioned<CelsiusDiff>,   // Lifted index
+    pub swet: Optioned<f64>,         // Severe Weather Threat index
+    pub kinx: Optioned<Celsius>,     // K-index
+    pub lclp: Optioned<HectoPascal>, // Lifting Condensation Level (hPa)
+    pub pwat: Optioned<Mm>,          // Precipitable water (mm)
+    pub totl: Optioned<f64>,         // Total-Totals
+    pub cape: Optioned<JpKg>,        // Convective Available Potential Energy
+    pub lclt: Optioned<Kelvin>,      // Temperature at LCL (K)
+    pub cins: Optioned<JpKg>,        // Convective Inhibitive Energy
+    pub eqlv: Optioned<HectoPascal>, // Equilibrium Level (hPa)
+    pub lfc: Optioned<HectoPascal>,  // Level of Free Convection (hPa)
+    pub brch: Optioned<f64>,         // Bulk Richardson Number
 
     // Upper air
-    pub pressure: Vec<f64>,       // Pressure (hPa)
-    pub temperature: Vec<f64>,    // Temperature (C)
-    pub wet_bulb: Vec<f64>,       // Wet Bulb (C)
-    pub dew_point: Vec<f64>,      // Dew Point (C)
-    pub theta_e: Vec<f64>,        // Equivalent Potential Temperature (K)
-    pub direction: Vec<f64>,      // Wind direction (degrees)
-    pub speed: Vec<f64>,          // Wind speed (knots)
-    pub omega: Vec<f64>,          // Pressure vertical velocity (Pa/sec)
-    pub height: Vec<f64>,         // height above MSL in meters
-    pub cloud_fraction: Vec<f64>, // Cloud fraction
+    pub pressure: Vec<Optioned<HectoPascal>>, // Pressure (hPa)
+    pub temperature: Vec<Optioned<Celsius>>,  // Temperature (C)
+    pub wet_bulb: Vec<Optioned<Celsius>>,     // Wet Bulb (C)
+    pub dew_point: Vec<Optioned<Celsius>>,    // Dew Point (C)
+    pub theta_e: Vec<Optioned<Kelvin>>,       // Equivalent Potential Temperature (K)
+    pub wind: Vec<Optioned<WindSpdDir<Knots>>>, // Wind speed and direction, knots
+    pub omega: Vec<Optioned<PaPS>>,           // Pressure vertical velocity (Pa/sec)
+    pub height: Vec<Optioned<Meters>>,        // height above MSL in meters
+    pub cloud_fraction: Vec<Optioned<f64>>,   // Cloud fraction
 }
 
 impl UpperAir {
@@ -53,7 +56,7 @@ impl UpperAir {
         use self::indexes::Indexes;
         use self::profile::Profile;
         use self::station_info::StationInfo;
-        use parse_util::find_blank_line;
+        use crate::parse_util::find_blank_line;
 
         let mut break_point = find_blank_line(text).ok_or_else(BufkitFileError::new)?;
         let (station_info_section, the_rest) = text.split_at(break_point);
@@ -95,8 +98,7 @@ impl UpperAir {
             wet_bulb: upper_air.wet_bulb,
             dew_point: upper_air.dew_point,
             theta_e: upper_air.theta_e,
-            direction: upper_air.direction,
-            speed: upper_air.speed,
+            wind: upper_air.wind,
             omega: upper_air.omega,
             height: upper_air.height,
             cloud_fraction: upper_air.cloud_fraction,
@@ -123,8 +125,7 @@ impl UpperAir {
         is_valid_length(self.wet_bulb.len())?;
         is_valid_length(self.dew_point.len())?;
         is_valid_length(self.theta_e.len())?;
-        is_valid_length(self.direction.len())?;
-        is_valid_length(self.speed.len())?;
+        is_valid_length(self.wind.len())?;
         is_valid_length(self.omega.len())?;
         is_valid_length(self.height.len())?;
         is_valid_length(self.cloud_fraction.len())?;
@@ -274,6 +275,7 @@ mod test {
     #[test]
     fn test_parse() {
         use chrono::NaiveDate;
+        use optional::some;
 
         let test_data = get_test_data();
 
@@ -288,43 +290,47 @@ mod test {
             NaiveDate::from_ymd(2017, 4, 1).and_hms(1, 0, 0)
         );
         assert_eq!(snd.lead_time, 1);
-        assert_eq!(snd.lat, 46.87);
-        assert_eq!(snd.lon, -114.16);
-        assert_eq!(snd.elevation, 1335.0);
+        assert_eq!(snd.lat, some(46.87));
+        assert_eq!(snd.lon, some(-114.16));
+        assert_eq!(snd.elevation, some(Meters(1335.0)));
 
-        assert_eq!(snd.show, 8.12);
-        assert_eq!(snd.li, 8.0);
-        assert_eq!(snd.swet, 39.08);
-        assert_eq!(snd.kinx, 14.88);
-        assert_eq!(snd.lclp, 780.77);
-        assert_eq!(snd.pwat, 9.28);
-        assert_eq!(snd.totl, 39.55);
-        assert_eq!(snd.cape, 0.0);
-        assert_eq!(snd.lclt, 272.88);
-        assert_eq!(snd.cins, 0.0);
-        assert_eq!(snd.eqlv, -9999.0);
-        assert_eq!(snd.lfc, -9999.0);
-        assert_eq!(snd.brch, 0.0);
+        assert_eq!(snd.show, some(CelsiusDiff(8.12)));
+        assert_eq!(snd.li, some(CelsiusDiff(8.0)));
+        assert_eq!(snd.swet, some(39.08));
+        assert_eq!(snd.kinx, some(Celsius(14.88)));
+        assert_eq!(snd.lclp, some(HectoPascal(780.77)));
+        assert_eq!(snd.pwat, some(Mm(9.28)));
+        assert_eq!(snd.totl, some(39.55));
+        assert_eq!(snd.cape, some(JpKg(0.0)));
+        assert_eq!(snd.lclt, some(Kelvin(272.88)));
+        assert_eq!(snd.cins, some(JpKg(0.0)));
+        assert!(snd.eqlv.is_none());
+        assert!(snd.lfc.is_none());
+        assert_eq!(snd.brch, some(0.0));
 
         // Upper air - 3rd level.
-        assert_eq!(snd.pressure[2], 859.8);
-        assert_eq!(snd.temperature[2], 7.24);
-        assert_eq!(snd.wet_bulb[2], 4.18);
-        assert_eq!(snd.dew_point[2], 0.9);
-        assert_eq!(snd.theta_e[2], 306.87);
-        assert_eq!(snd.direction[2], 292.38);
-        assert_eq!(snd.speed[2], 3.57);
-        assert_eq!(snd.omega[2], 0.00);
-        assert_eq!(snd.height[2], 1423.71);
-        assert_eq!(snd.cloud_fraction[2], 0.0);
+        assert_eq!(snd.pressure[2], some(HectoPascal(859.8)));
+        assert_eq!(snd.temperature[2], some(Celsius(7.24)));
+        assert_eq!(snd.wet_bulb[2], some(Celsius(4.18)));
+        assert_eq!(snd.dew_point[2], some(Celsius(0.90)));
+        assert_eq!(snd.theta_e[2], some(Kelvin(306.87)));
+        assert_eq!(
+            snd.wind[2],
+            some(WindSpdDir {
+                direction: 292.38,
+                speed: Knots(3.57)
+            })
+        );
+        assert_eq!(snd.omega[2], some(PaPS(0.00)));
+        assert_eq!(snd.height[2], some(Meters(1423.71)));
+        assert_eq!(snd.cloud_fraction[2], some(0.0));
 
         assert_eq!(snd.pressure.len(), 60);
         assert_eq!(snd.temperature.len(), 60);
         assert_eq!(snd.wet_bulb.len(), 60);
         assert_eq!(snd.dew_point.len(), 60);
         assert_eq!(snd.theta_e.len(), 60);
-        assert_eq!(snd.direction.len(), 60);
-        assert_eq!(snd.speed.len(), 60);
+        assert_eq!(snd.wind.len(), 60);
         assert_eq!(snd.omega.len(), 60);
         assert_eq!(snd.height.len(), 60);
         assert_eq!(snd.cloud_fraction.len(), 60);

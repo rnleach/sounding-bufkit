@@ -1,15 +1,15 @@
 //! Module for reading a bufkit file and breaking it into smaller pieces for parsing later.
+use crate::parse_util::check_missing_i32;
 use std::collections::HashMap;
 use std::error::Error;
 use std::path::Path;
-
-use optional::{none, some, Optioned};
 
 mod surface;
 mod surface_section;
 mod upper_air;
 mod upper_air_section;
 
+use metfor::{MetersPSec, Quantity, WindUV};
 use sounding_analysis::Analysis;
 use sounding_base::{Sounding, StationInfo};
 
@@ -17,7 +17,7 @@ use self::surface::SurfaceData;
 use self::surface_section::{SurfaceIterator, SurfaceSection};
 use self::upper_air::UpperAir;
 use self::upper_air_section::{UpperAirIterator, UpperAirSection};
-use error::*;
+use crate::error::*;
 
 /// Hold an entire bufkit file in memory.
 pub struct BufkitFile {
@@ -50,8 +50,8 @@ impl BufkitFile {
     }
 
     /// Get a bufkit data object from this file.
-    pub fn data(&self) -> Result<BufkitData, Box<dyn Error>> {
-        BufkitData::new(&self.file_text)
+    pub fn data(&self) -> Result<BufkitData<'_>, Box<dyn Error>> {
+        BufkitData::init(&self.file_text)
     }
 
     /// Get the raw string data from the file.
@@ -77,17 +77,20 @@ impl<'a> BufkitData<'a> {
         Ok(())
     }
 
-    /// Create a new data representation from a string
-    pub fn new(text: &str) -> Result<BufkitData, Box<dyn Error>> {
+    /// Initialize struct for parsing a sounding.
+    pub fn init(text: &str) -> Result<BufkitData<'_>, Box<dyn Error>> {
         let break_point = BufkitData::find_break_point(text)?;
         let data = BufkitData::new_with_break_point(text, break_point)?;
         Ok(data)
     }
 
-    fn new_with_break_point(text: &str, break_point: usize) -> Result<BufkitData, BufkitFileError> {
+    fn new_with_break_point(
+        text: &str,
+        break_point: usize,
+    ) -> Result<BufkitData<'_>, BufkitFileError> {
         Ok(BufkitData {
             upper_air: UpperAirSection::new(&text[0..break_point]),
-            surface: SurfaceSection::new(&text[break_point..])?,
+            surface: SurfaceSection::init(&text[break_point..])?,
         })
     }
 
@@ -111,151 +114,43 @@ impl<'a> IntoIterator for &'a BufkitData<'a> {
     }
 }
 
-fn combine_data(ua: &UpperAir, sd: &SurfaceData) -> Analysis {
-    use sounding_base::Profile;
-    use sounding_base::Surface;
+#[allow(clippy::needless_pass_by_value)]
+fn combine_data(ua: UpperAir, sd: SurfaceData) -> Analysis {
+    let coords: Option<(f64, f64)> = ua
+        .lat
+        .into_option()
+        .and_then(|lat| ua.lon.into_option().map(|lon| (lat, lon)));
 
-    // Missing or no data values used in Bufkit files
-    const MISSING_I32: i32 = -9999;
-    const MISSING_F64: f64 = -9999.0;
-
-    fn check_missing(val: f64) -> Optioned<f64> {
-        if val == MISSING_F64 {
-            none()
-        } else {
-            some(val)
-        }
-    }
-
-    fn check_missing_i32(val: i32) -> Option<i32> {
-        if val == MISSING_I32 {
-            None
-        } else {
-            Some(val)
-        }
-    }
-
-    let coords: Option<(f64, f64)> = if ua.lat == MISSING_F64 || ua.lon == MISSING_F64 {
-        None
-    } else {
-        Some((ua.lat, ua.lon))
-    };
-
-    let station = StationInfo::new_with_values(
-        check_missing_i32(ua.num),
-        coords,
-        check_missing(ua.elevation),
-    );
-
-    let (sfc_wind_dir, sfc_wind_spd) = {
-        let u = check_missing(sd.uwind).into_option();
-        let v = check_missing(sd.vwind).into_option();
-        if let (Some(u), Some(v)) = (u, v) {
-            let (dir, spd) = ::metfor::uv_to_spd_dir(u, v);
-            (some(dir), some(spd))
-        } else {
-            (none(), none())
-        }
-    };
-
-    let strm_motion_spd = check_missing(sd.u_storm)
-        .and_then(|u| check_missing(sd.v_storm).and_then(|v| some(u.hypot(v))))
-        .and_then(|mps| some(mps * 1.94384)); // convert m/s to knots
-
-    let strm_motion_dir = check_missing(sd.u_storm)
-        .and_then(|u| check_missing(sd.v_storm).and_then(|v| some(v.atan2(u).to_degrees())))
-        .and_then(|mut dir| {
-            // map into 0 -> 360 range.
-            while dir < 0.0 {
-                dir += 360.0;
-            }
-            while dir > 360.0 {
-                dir -= 360.0;
-            }
-            some(dir)
-        });
+    let station = StationInfo::new_with_values(check_missing_i32(ua.num), coords, ua.elevation);
 
     let snd = Sounding::new()
-        .set_station_info(station)
-        .set_valid_time(ua.valid_time)
-        .set_lead_time(check_missing_i32(ua.lead_time))
+        .with_station_info(station)
+        .with_valid_time(ua.valid_time)
+        .with_lead_time(check_missing_i32(ua.lead_time))
         // Upper air
-        .set_profile(
-            Profile::Pressure,
-            ua.pressure
-                .iter()
-                .map(|val| check_missing(*val))
-                .collect::<Vec<_>>(),
-        ).set_profile(
-            Profile::Temperature,
-            ua.temperature
-                .iter()
-                .map(|val| check_missing(*val))
-                .collect::<Vec<_>>(),
-        ).set_profile(
-            Profile::WetBulb,
-            ua.wet_bulb
-                .iter()
-                .map(|val| check_missing(*val))
-                .collect::<Vec<_>>(),
-        ).set_profile(
-            Profile::DewPoint,
-            ua.dew_point
-                .iter()
-                .map(|val| check_missing(*val))
-                .collect::<Vec<_>>(),
-        ).set_profile(
-            Profile::ThetaE,
-            ua.theta_e
-                .iter()
-                .map(|val| check_missing(*val))
-                .collect::<Vec<_>>(),
-        ).set_profile(
-            Profile::WindDirection,
-            ua.direction
-                .iter()
-                .map(|val| check_missing(*val))
-                .collect::<Vec<_>>(),
-        ).set_profile(
-            Profile::WindSpeed,
-            ua.speed
-                .iter()
-                .map(|val| check_missing(*val))
-                .collect::<Vec<_>>(),
-        ).set_profile(
-            Profile::PressureVerticalVelocity,
-            ua.omega
-                .iter()
-                .map(|val| check_missing(*val))
-                .collect::<Vec<_>>(),
-        ).set_profile(
-            Profile::GeopotentialHeight,
-            ua.height
-                .iter()
-                .map(|val| check_missing(*val))
-                .collect::<Vec<_>>(),
-        ).set_profile(
-            Profile::CloudFraction,
-            ua.cloud_fraction
-                .iter()
-                .map(|val| check_missing(*val))
-                .collect::<Vec<_>>(),
-        )
+        .with_pressure_profile(ua.pressure)
+        .with_temperature_profile(ua.temperature)
+        .with_wet_bulb_profile(ua.wet_bulb)
+        .with_dew_point_profile(ua.dew_point)
+        .with_theta_e_profile(ua.theta_e)
+        .with_wind_profile(ua.wind)
+        .with_pvv_profile(ua.omega)
+        .with_height_profile(ua.height)
+        .with_cloud_fraction_profile(ua.cloud_fraction)
         // Surface data
-        .set_surface_value(Surface::MSLP, check_missing(sd.mslp))
-        .set_surface_value(Surface::Temperature, check_missing(sd.temperature))
-        .set_surface_value(Surface::DewPoint, check_missing(sd.dewpoint))
-        .set_surface_value(Surface::StationPressure, check_missing(sd.station_pres))
-        .set_surface_value(Surface::LowCloud, check_missing(sd.low_cloud))
-        .set_surface_value(Surface::MidCloud, check_missing(sd.mid_cloud))
-        .set_surface_value(Surface::HighCloud, check_missing(sd.hi_cloud))
-        .set_surface_value(Surface::WindDirection, sfc_wind_dir)
-        .set_surface_value(Surface::WindSpeed, sfc_wind_spd);
+        .with_mslp(sd.mslp)
+        .with_sfc_temperature(sd.temperature)
+        .with_sfc_dew_point(sd.dewpoint)
+        .with_station_pressure(sd.station_pres)
+        .with_low_cloud(sd.low_cloud)
+        .with_mid_cloud(sd.mid_cloud)
+        .with_high_cloud(sd.hi_cloud)
+        .with_sfc_wind(sd.wind);
 
     macro_rules! check_and_add {
         ($opt:expr, $key:expr, $hash_map:ident) => {
-            if let Some(val) = check_missing($opt).into() {
-                $hash_map.insert($key, val);
+            if let Some(val) = $opt.into_option() {
+                $hash_map.insert($key, val.unpack());
             }
         };
     }
@@ -279,19 +174,21 @@ fn combine_data(ua: &UpperAir, sd: &SurfaceData) -> Analysis {
     check_and_add!(sd.skin_temp, "SkinTemperature", bufkit_anal);
     check_and_add!(sd.lyr_1_soil_temp, "Layer1SoilTemp", bufkit_anal);
     check_and_add!(sd.snow_1hr, "SnowFall1HourKgPerMeterSquared", bufkit_anal);
-    check_and_add!(sd.p01 / 25.4, "Precipitation1HrIn", bufkit_anal);
-    check_and_add!(sd.c01 / 25.4, "ConvectivePrecip1HrIn", bufkit_anal);
+    check_and_add!(sd.p01, "Precipitation1HrMm", bufkit_anal);
+    check_and_add!(sd.c01, "ConvectivePrecip1HrMm", bufkit_anal);
     check_and_add!(sd.lyr_2_soil_temp, "Layer2SoilTemp", bufkit_anal);
     check_and_add!(sd.snow_ratio, "SnowRatio", bufkit_anal);
-    if let (Some(spd), Some(dir)) = (strm_motion_spd.into(), strm_motion_dir.into()) {
-        bufkit_anal.insert("StormMotionSpd", spd);
-        bufkit_anal.insert("StormMotionDir", dir);
+    if let Some(WindUV {
+        u: MetersPSec(u),
+        v: MetersPSec(v),
+    }) = sd.storm_motion.into_option()
+    {
+        bufkit_anal.insert("StormMotionUMps", u);
+        bufkit_anal.insert("StormMotionVMps", v);
     }
     check_and_add!(sd.srh, "StormRelativeHelicity", bufkit_anal);
 
-    let anal = Analysis::new(snd).with_provider_analysis(bufkit_anal);
-
-    anal
+    Analysis::new(snd).with_provider_analysis(bufkit_anal)
 }
 
 /// Iterator type for `BufkitData` that returns a `Sounding`.
@@ -315,7 +212,7 @@ impl<'a> Iterator for SoundingIterator<'a> {
                 next_ua = self.upper_air_it.next()?;
             }
             if next_ua.valid_time == next_sd.valid_time {
-                return Some(combine_data(&next_ua, &next_sd));
+                return Some(combine_data(next_ua, next_sd));
             }
         }
     }

@@ -1,3 +1,4 @@
+#![doc(test(attr(deny(warnings))))]
 #![warn(missing_docs)]
 //! Library to load, parse, validate, and iterate over [Bufkit][1] files.
 //!
@@ -7,18 +8,12 @@
 // API
 //
 
-pub use bufkit_data::{BufkitData, BufkitFile, SoundingIterator};
-pub use error::*;
+pub use crate::bufkit_data::{BufkitData, BufkitFile, SoundingIterator};
+pub use crate::error::*;
 
 //
 // Internal use only
 //
-extern crate chrono;
-extern crate optional;
-
-extern crate metfor;
-extern crate sounding_analysis;
-extern crate sounding_base;
 
 mod bufkit_data;
 mod error;

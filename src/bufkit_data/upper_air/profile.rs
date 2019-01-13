@@ -1,20 +1,22 @@
 //! Parses the *variables* vs height/pressure, or the core part of the sounding.
 
-use error::*;
+use crate::error::*;
+use crate::parse_util::check_missing;
+use metfor::{Celsius, HectoPascal, Kelvin, Knots, Meters, PaPS, WindSpdDir};
+use optional::Optioned;
 use std::error::Error;
 
 #[derive(Debug)]
 pub struct Profile {
-    pub pressure: Vec<f64>,       // Pressure (hPa)
-    pub temperature: Vec<f64>,    // Temperature (C)
-    pub wet_bulb: Vec<f64>,       // Wet Bulb (C)
-    pub dew_point: Vec<f64>,      // Dew Point (C)
-    pub theta_e: Vec<f64>,        // Equivalent Potential Temperature (K)
-    pub direction: Vec<f64>,      // Wind direction (degrees)
-    pub speed: Vec<f64>,          // Wind speed (knots)
-    pub omega: Vec<f64>,          // Pressure vertical velocity (Pa/sec)
-    pub height: Vec<f64>,         // height above MSL in meters
-    pub cloud_fraction: Vec<f64>, // Cloud fraction
+    pub pressure: Vec<Optioned<HectoPascal>>,   // Pressure (hPa)
+    pub temperature: Vec<Optioned<Celsius>>,    // Temperature (C)
+    pub wet_bulb: Vec<Optioned<Celsius>>,       // Wet Bulb (C)
+    pub dew_point: Vec<Optioned<Celsius>>,      // Dew Point (C)
+    pub theta_e: Vec<Optioned<Kelvin>>,         // Equivalent Potential Temperature (K)
+    pub wind: Vec<Optioned<WindSpdDir<Knots>>>, // Wind speed and direction in knots
+    pub omega: Vec<Optioned<PaPS>>,             // Pressure vertical velocity (Pa/sec)
+    pub height: Vec<Optioned<Meters>>,          // height above MSL in meters
+    pub cloud_fraction: Vec<Optioned<f64>>,     // Cloud fraction
 }
 
 impl Profile {
@@ -72,12 +74,14 @@ impl Profile {
             wet_bulb: Vec::with_capacity(INITIAL_CAPACITY),
             dew_point: Vec::with_capacity(INITIAL_CAPACITY),
             theta_e: Vec::with_capacity(INITIAL_CAPACITY),
-            direction: Vec::with_capacity(INITIAL_CAPACITY),
-            speed: Vec::with_capacity(INITIAL_CAPACITY),
+            wind: Vec::with_capacity(INITIAL_CAPACITY),
             omega: Vec::with_capacity(INITIAL_CAPACITY),
             height: Vec::with_capacity(INITIAL_CAPACITY),
             cloud_fraction: Vec::with_capacity(INITIAL_CAPACITY),
         };
+
+        let mut direction: Vec<Optioned<f64>> = Vec::with_capacity(INITIAL_CAPACITY);
+        let mut speed: Vec<Optioned<Knots>> = Vec::with_capacity(INITIAL_CAPACITY);
 
         let num_cols = cols.num_cols();
         let values = values.trim().split_whitespace();
@@ -85,22 +89,36 @@ impl Profile {
         for (i, text_val) in values.enumerate() {
             use self::ColName::*;
 
-            let val = f64::from_str(text_val)?;
+            let val = check_missing(f64::from_str(text_val)?);
 
             match cols.names[i % num_cols] {
                 NONE => return Err(BufkitFileError::new().into()),
-                PRES => parsed_vals.pressure.push(val),
-                TMPC => parsed_vals.temperature.push(val),
-                TMWC => parsed_vals.wet_bulb.push(val),
-                DWPC => parsed_vals.dew_point.push(val),
-                THTE => parsed_vals.theta_e.push(val),
-                DRCT => parsed_vals.direction.push(val),
-                SKNT => parsed_vals.speed.push(val),
-                OMEG => parsed_vals.omega.push(val),
+                PRES => parsed_vals.pressure.push(val.map_t(HectoPascal)),
+                TMPC => parsed_vals.temperature.push(val.map_t(Celsius)),
+                TMWC => parsed_vals.wet_bulb.push(val.map_t(Celsius)),
+                DWPC => parsed_vals.dew_point.push(val.map_t(Celsius)),
+                THTE => parsed_vals.theta_e.push(val.map_t(Kelvin)),
+                DRCT => direction.push(val),
+                SKNT => speed.push(val.map_t(Knots)),
+                OMEG => parsed_vals.omega.push(val.map_t(PaPS)),
                 CFRL => parsed_vals.cloud_fraction.push(val),
-                HGHT => parsed_vals.height.push(val),
+                HGHT => parsed_vals.height.push(val.map_t(Meters)),
             }
         }
+
+        parsed_vals.wind = direction
+            .into_iter()
+            .zip(speed.into_iter())
+            .map(|(dir_opt, spd_opt)| {
+                dir_opt.and_then(|dir| {
+                    spd_opt.map_t(|spd| WindSpdDir {
+                        speed: spd,
+                        direction: dir,
+                    })
+                })
+            })
+            .collect();
+
         Ok(parsed_vals)
     }
 }
@@ -149,6 +167,7 @@ impl ProfileColIndexes {
 #[cfg(test)]
 mod test {
     use super::*;
+    use optional::some;
 
     #[test]
     fn test_parse() {
@@ -160,15 +179,44 @@ mod test {
 
         println!("upper_air: {:?}", upper_air);
 
-        assert_eq!(upper_air.pressure, vec![906.7, 901.5]);
-        assert_eq!(upper_air.temperature, vec![10.54, 10.04]);
-        assert_eq!(upper_air.wet_bulb, vec![6.12, 5.79]);
-        assert_eq!(upper_air.dew_point, vec![1.52, 1.32]);
-        assert_eq!(upper_air.theta_e, vec![305.69, 305.54]);
-        assert_eq!(upper_air.direction, vec![270.0, 274.76]);
-        assert_eq!(upper_air.speed, vec![2.14, 2.33]);
-        assert_eq!(upper_air.omega, vec![-2.00, -2.00]);
-        assert_eq!(upper_air.height, vec![994.01, 1041.87]);
+        assert_eq!(
+            upper_air.pressure,
+            vec![some(HectoPascal(906.7)), some(HectoPascal(901.5))]
+        );
+        assert_eq!(
+            upper_air.temperature,
+            vec![some(Celsius(10.54)), some(Celsius(10.04))]
+        );
+        assert_eq!(
+            upper_air.wet_bulb,
+            vec![some(Celsius(6.12)), some(Celsius(5.79))]
+        );
+        assert_eq!(
+            upper_air.dew_point,
+            vec![some(Celsius(1.52)), some(Celsius(1.32))]
+        );
+        assert_eq!(
+            upper_air.theta_e,
+            vec![some(Kelvin(305.69)), some(Kelvin(305.54))]
+        );
+        assert_eq!(
+            upper_air.wind,
+            vec![
+                some(WindSpdDir {
+                    direction: 270.0,
+                    speed: Knots(2.14)
+                }),
+                some(WindSpdDir {
+                    direction: 274.76,
+                    speed: Knots(2.33)
+                })
+            ]
+        );
+        assert_eq!(upper_air.omega, vec![some(PaPS(-2.00)), some(PaPS(-2.00))]);
+        assert_eq!(
+            upper_air.height,
+            vec![some(Meters(994.01)), some(Meters(1041.87))]
+        );
     }
 
     // PRES - Pressure (hPa)
@@ -235,14 +283,43 @@ mod test {
 
         println!("upper_air: {:?}", upper_air);
 
-        assert_eq!(upper_air.pressure, vec![906.7, 901.5]);
-        assert_eq!(upper_air.temperature, vec![10.54, 10.04]);
-        assert_eq!(upper_air.wet_bulb, vec![6.12, 5.79]);
-        assert_eq!(upper_air.dew_point, vec![1.52, 1.32]);
-        assert_eq!(upper_air.theta_e, vec![305.69, 305.54]);
-        assert_eq!(upper_air.direction, vec![270.0, 274.76]);
-        assert_eq!(upper_air.speed, vec![2.14, 2.33]);
-        assert_eq!(upper_air.omega, vec![-2.00, -2.00]);
-        assert_eq!(upper_air.height, vec![994.01, 1041.87]);
+        assert_eq!(
+            upper_air.pressure,
+            vec![some(HectoPascal(906.7)), some(HectoPascal(901.5))]
+        );
+        assert_eq!(
+            upper_air.temperature,
+            vec![some(Celsius(10.54)), some(Celsius(10.04))]
+        );
+        assert_eq!(
+            upper_air.wet_bulb,
+            vec![some(Celsius(6.12)), some(Celsius(5.79))]
+        );
+        assert_eq!(
+            upper_air.dew_point,
+            vec![some(Celsius(1.52)), some(Celsius(1.32))]
+        );
+        assert_eq!(
+            upper_air.theta_e,
+            vec![some(Kelvin(305.69)), some(Kelvin(305.54))]
+        );
+        assert_eq!(
+            upper_air.wind,
+            vec![
+                some(WindSpdDir {
+                    direction: 270.0,
+                    speed: Knots(2.14)
+                }),
+                some(WindSpdDir {
+                    direction: 274.76,
+                    speed: Knots(2.33)
+                })
+            ]
+        );
+        assert_eq!(upper_air.omega, vec![some(PaPS(-2.00)), some(PaPS(-2.00))]);
+        assert_eq!(
+            upper_air.height,
+            vec![some(Meters(994.01)), some(Meters(1041.87))]
+        );
     }
 }
