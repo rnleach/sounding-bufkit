@@ -1,3 +1,4 @@
+#![doc(test(attr(deny(warnings))))]
 #![warn(missing_docs)]
 //! Library to load, parse, validate, and iterate over [Bufkit][1] files.
 //!
