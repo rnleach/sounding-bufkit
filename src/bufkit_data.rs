@@ -22,6 +22,7 @@ use crate::error::*;
 /// Hold an entire bufkit file in memory.
 pub struct BufkitFile {
     file_text: String,
+    file_name: String,
 }
 
 impl BufkitFile {
@@ -38,6 +39,10 @@ impl BufkitFile {
 
         Ok(BufkitFile {
             file_text: contents,
+            file_name: path
+                .file_name()
+                .map(|s| s.to_string_lossy().to_string())
+                .unwrap_or_else(|| "Unknown File".to_owned()),
         })
     }
 
@@ -51,7 +56,7 @@ impl BufkitFile {
 
     /// Get a bufkit data object from this file.
     pub fn data(&self) -> Result<BufkitData<'_>, Box<dyn Error>> {
-        BufkitData::init(&self.file_text)
+        BufkitData::init(&self.file_text, &self.file_name)
     }
 
     /// Get the raw string data from the file.
@@ -67,6 +72,7 @@ impl BufkitFile {
 pub struct BufkitData<'a> {
     upper_air: UpperAirSection<'a>,
     surface: SurfaceSection<'a>,
+    file_name: &'a str,
 }
 
 impl<'a> BufkitData<'a> {
@@ -78,19 +84,21 @@ impl<'a> BufkitData<'a> {
     }
 
     /// Initialize struct for parsing a sounding.
-    pub fn init(text: &str) -> Result<BufkitData<'_>, Box<dyn Error>> {
+    pub fn init(text: &'a str, fname: &'a str) -> Result<BufkitData<'a>, Box<dyn Error>> {
         let break_point = BufkitData::find_break_point(text)?;
-        let data = BufkitData::new_with_break_point(text, break_point)?;
+        let data = BufkitData::new_with_break_point(text, break_point, fname)?;
         Ok(data)
     }
 
     fn new_with_break_point(
-        text: &str,
+        text: &'a str,
         break_point: usize,
-    ) -> Result<BufkitData<'_>, BufkitFileError> {
+        fname: &'a str,
+    ) -> Result<BufkitData<'a>, BufkitFileError> {
         Ok(BufkitData {
             upper_air: UpperAirSection::new(&text[0..break_point]),
             surface: SurfaceSection::init(&text[break_point..])?,
+            file_name: fname,
         })
     }
 
@@ -110,12 +118,13 @@ impl<'a> IntoIterator for &'a BufkitData<'a> {
         SoundingIterator {
             upper_air_it: self.upper_air.into_iter(),
             surface_it: self.surface.into_iter(),
+            source_name: self.file_name,
         }
     }
 }
 
 #[allow(clippy::needless_pass_by_value)]
-fn combine_data(ua: UpperAir, sd: SurfaceData) -> Analysis {
+fn combine_data(ua: UpperAir, sd: SurfaceData, fname: &str) -> Analysis {
     let coords: Option<(f64, f64)> = ua
         .lat
         .into_option()
@@ -124,6 +133,7 @@ fn combine_data(ua: UpperAir, sd: SurfaceData) -> Analysis {
     let station = StationInfo::new_with_values(check_missing_i32(ua.num), coords, ua.elevation);
 
     let snd = Sounding::new()
+        .with_source_description(fname.to_owned())
         .with_station_info(station)
         .with_valid_time(ua.valid_time)
         .with_lead_time(check_missing_i32(ua.lead_time))
@@ -195,6 +205,7 @@ fn combine_data(ua: UpperAir, sd: SurfaceData) -> Analysis {
 pub struct SoundingIterator<'a> {
     upper_air_it: UpperAirIterator<'a>,
     surface_it: SurfaceIterator<'a>,
+    source_name: &'a str,
 }
 
 impl<'a> Iterator for SoundingIterator<'a> {
@@ -212,7 +223,7 @@ impl<'a> Iterator for SoundingIterator<'a> {
                 next_ua = self.upper_air_it.next()?;
             }
             if next_ua.valid_time == next_sd.valid_time {
-                return Some(combine_data(next_ua, next_sd));
+                return Some(combine_data(next_ua, next_sd, &self.source_name));
             }
         }
     }

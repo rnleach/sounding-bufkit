@@ -53,7 +53,7 @@ where
 }
 
 #[test]
-#[cfg_attr(rustfmt, rustfmt_skip)]
+#[rustfmt::skip]
 fn test_parse_kv() {
     let test_data =
         "STID = STNM = 727730 TIME = 170401/0000 \
@@ -112,7 +112,7 @@ pub fn parse_f64<'a, 'b>(
 }
 
 #[test]
-#[cfg_attr(rustfmt, rustfmt_skip)]
+#[rustfmt::skip]
 fn test_parse_f64() {
     let test_data =
         "STID = STNM = 727730 TIME = 170401/0000 \
@@ -149,7 +149,7 @@ pub fn parse_i32<'a, 'b>(src: &'a str, key: &'b str) -> Result<(i32, &'a str), B
 }
 
 #[test]
-#[cfg_attr(rustfmt, rustfmt_skip)]
+#[rustfmt::skip]
 fn test_parse_i32() {
     let test_data =
         "STID = STNM = 727730 TIME = 170401/0000 \
