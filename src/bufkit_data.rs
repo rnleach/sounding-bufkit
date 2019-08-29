@@ -10,8 +10,7 @@ mod upper_air;
 mod upper_air_section;
 
 use metfor::{MetersPSec, Quantity, WindUV};
-use sounding_analysis::Analysis;
-use sounding_base::{Sounding, StationInfo};
+use sounding_analysis::{Sounding, StationInfo};
 
 use self::surface::SurfaceData;
 use self::surface_section::{SurfaceIterator, SurfaceSection};
@@ -111,7 +110,7 @@ impl<'a> BufkitData<'a> {
 }
 
 impl<'a> IntoIterator for &'a BufkitData<'a> {
-    type Item = Analysis;
+    type Item = (Sounding, HashMap<&'static str, f64>);
     type IntoIter = SoundingIterator<'a>;
 
     fn into_iter(self) -> Self::IntoIter {
@@ -124,7 +123,7 @@ impl<'a> IntoIterator for &'a BufkitData<'a> {
 }
 
 #[allow(clippy::needless_pass_by_value)]
-fn combine_data(ua: UpperAir, sd: SurfaceData, fname: &str) -> Analysis {
+fn combine_data(ua: UpperAir, sd: SurfaceData, fname: &str) -> (Sounding,HashMap<&'static str, f64>)  {
     let coords: Option<(f64, f64)> = ua
         .lat
         .into_option()
@@ -198,7 +197,7 @@ fn combine_data(ua: UpperAir, sd: SurfaceData, fname: &str) -> Analysis {
     }
     check_and_add!(sd.srh, "StormRelativeHelicity", bufkit_anal);
 
-    Analysis::new(snd).with_provider_analysis(bufkit_anal)
+    (snd, bufkit_anal)
 }
 
 /// Iterator type for `BufkitData` that returns a `Sounding`.
@@ -209,7 +208,7 @@ pub struct SoundingIterator<'a> {
 }
 
 impl<'a> Iterator for SoundingIterator<'a> {
-    type Item = Analysis;
+    type Item = (Sounding, HashMap<&'static str, f64>);
 
     fn next(&mut self) -> Option<Self::Item> {
         let mut next_ua = self.upper_air_it.next()?;

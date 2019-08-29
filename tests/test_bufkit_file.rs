@@ -18,9 +18,7 @@ fn test_bufkit_file() {
     for file in files {
         println!("Testing: {:?}", file);
         let example_file = BufkitFile::load(&file).expect("Error loading data.");
-        println!("Loaded");
-        let data = example_file.data().unwrap();
-        println!("Got Data");
+        let data = example_file.data().expect("Error parsing data");
         if file.to_str().unwrap().contains("2017040100Z_gfs3_kmso") {
             // This file has been seeded with invalid data.
             println!("Skipping");

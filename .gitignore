@@ -10,6 +10,8 @@ Cargo.lock
 //
 *.sublime*
 .vscode
+*.swp
+tags
 
 //
 // OS specific
