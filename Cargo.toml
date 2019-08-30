@@ -6,13 +6,13 @@ description = """Library to parse and load Bufkit sounding files."""
 repository = "https://github.com/rnleach/sounding-bufkit.git"
 readme = "README.md"
 license-file = "LICENSE"
-exclude = ["**/*.rs.bk",".gitignore",".vscode/**/*", "tests/**/*", "example_data/**/*", "bufkit_parameters.txt"]
+exclude = ["**/*.rs.bk",".gitignore",".vscode/**/*", "tests/**/*", "tags", "example_data/**/*", "bufkit_parameters.txt"]
 categories = ["science"]
 keywords = ["weather","sounding","meteorology", "skew-t", "Bufkit"]
 edition = "2018"
 
 [dependencies]
 metfor = "^0.7.0"
-sounding-analysis = {git = "https://github.com/rnleach/sounding-analysis.git", tag = "v0.12.0-rc.1"}
+sounding-analysis = "^0.12.0"
 chrono="^0.4"
 optional = "^0.5.0"
