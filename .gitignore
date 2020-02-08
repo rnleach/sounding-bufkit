@@ -12,6 +12,7 @@ Cargo.lock
 .vscode
 *.swp
 tags
+Session.vim
 
 //
 // OS specific

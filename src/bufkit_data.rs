@@ -123,7 +123,11 @@ impl<'a> IntoIterator for &'a BufkitData<'a> {
 }
 
 #[allow(clippy::needless_pass_by_value)]
-fn combine_data(ua: UpperAir, sd: SurfaceData, fname: &str) -> (Sounding,HashMap<&'static str, f64>)  {
+fn combine_data(
+    ua: UpperAir,
+    sd: SurfaceData,
+    fname: &str,
+) -> (Sounding, HashMap<&'static str, f64>) {
     let coords: Option<(f64, f64)> = ua
         .lat
         .into_option()
@@ -196,6 +200,24 @@ fn combine_data(ua: UpperAir, sd: SurfaceData, fname: &str) -> (Sounding,HashMap
         bufkit_anal.insert("StormMotionVMps", v);
     }
     check_and_add!(sd.srh, "StormRelativeHelicity", bufkit_anal);
+    check_and_add!(sd.wx_sym_cod, "WxSymbolCode", bufkit_anal);
+
+    macro_rules! check_and_add_boolean {
+        ($opt:expr, $key:expr, $hash_map:ident) => {
+            if let Some(val) = $opt {
+                if val {
+                    $hash_map.insert($key, 1.0);
+                } else {
+                    $hash_map.insert($key, 0.0);
+                }
+            }
+        };
+    }
+
+    check_and_add_boolean!(sd.snow_type, "PrecipTypeSnow", bufkit_anal);
+    check_and_add_boolean!(sd.rain_type, "PrecipTypeRain", bufkit_anal);
+    check_and_add_boolean!(sd.fzra_type, "PrecipTypeFreezingRain", bufkit_anal);
+    check_and_add_boolean!(sd.ice_pellets_type, "PrecipTypeIcePellets", bufkit_anal);
 
     (snd, bufkit_anal)
 }

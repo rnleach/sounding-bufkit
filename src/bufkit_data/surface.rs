@@ -3,7 +3,7 @@
 use crate::error::*;
 use chrono::{NaiveDate, NaiveDateTime};
 use metfor::{Celsius, HectoPascal, Kelvin, Knots, MetersPSec, Mm, WindSpdDir, WindUV};
-use optional::{none, Optioned};
+use optional::{none, some, Optioned};
 use std::error::Error;
 
 /// Surface data.
@@ -32,16 +32,16 @@ pub struct SurfaceData {
     // R01M - 1-hour accumulated surface runoff (mm)
     // BFGR - 1-hour accumulated baseflow-groundwater runoff (mm)
     // Q2MS - 2-meter specific humidity
-    // WXTS - Snow precipitation type (1=Snow)
-    // WXTP - Ice pellets precipitation type (1=Ice pellets)
-    // WXTZ - Freezing rain precipitation type (1=Freezing rain)
-    // WXTR - Rain precipitation type (1=Rain)
+    pub snow_type: Option<bool>, // WXTS - Snow precipitation type (1=Snow)
+    pub ice_pellets_type: Option<bool>, // WXTP - Ice pellets precipitation type (1=Ice pellets)
+    pub fzra_type: Option<bool>, // WXTZ - Freezing rain precipitation type (1=Freezing rain)
+    pub rain_type: Option<bool>, // WXTR - Rain precipitation type (1=Rain)
     pub storm_motion: Optioned<WindUV<MetersPSec>>, // Storm motion (m/s)
-    pub srh: Optioned<f64>,                         // HLCY - Storm relative helicity (m**2/s**2)
-                                                    // SLLH - 1-hour surface evaporation (mm)
-                                                    // WSYM - Weather type symbol number
-                                                    // CDBP - Pressure at the base of cloud (hPa)
-                                                    // VSBK - Visibility (km)
+    pub srh: Optioned<f64>,      // HLCY - Storm relative helicity (m**2/s**2)
+    // SLLH - 1-hour surface evaporation (mm)
+    pub wx_sym_cod: Optioned<f64>, // WSYM - Weather type symbol number
+                                   // CDBP - Pressure at the base of cloud (hPa)
+                                   // VSBK - Visibility (km)
 }
 
 impl SurfaceData {
@@ -78,9 +78,14 @@ impl SurfaceData {
                 "C01M" => cols.names.push(C01M),
                 "STC2" => cols.names.push(STC2),
                 "SNRA" => cols.names.push(SNRA),
+                "WXTS" => cols.names.push(WXTS),
+                "WXTP" => cols.names.push(WXTP),
+                "WXTZ" => cols.names.push(WXTZ),
+                "WXTR" => cols.names.push(WXTR),
                 "USTM" => cols.names.push(USTM),
                 "VSTM" => cols.names.push(VSTM),
                 "HLCY" => cols.names.push(HLCY),
+                "WSYM" => cols.names.push(WSYM),
                 _ => cols.names.push(NONE),
             }
         }
@@ -145,9 +150,33 @@ impl SurfaceData {
                     C01M => sd.c01 = check_missing(f64::from_str(token)?).map_t(Mm),
                     STC2 => sd.lyr_2_soil_temp = check_missing(f64::from_str(token)?).map_t(Kelvin),
                     SNRA => sd.snow_ratio = check_missing(f64::from_str(token)?),
+                    WXTS => {
+                        sd.snow_type = check_missing(f64::from_str(token)?).map(|val| val > 0.5)
+                    }
+                    WXTP => {
+                        sd.ice_pellets_type =
+                            check_missing(f64::from_str(token)?).map(|val| val > 0.5)
+                    }
+                    WXTZ => {
+                        sd.fzra_type = check_missing(f64::from_str(token)?).map(|val| val > 0.5)
+                    }
+                    WXTR => {
+                        sd.rain_type = check_missing(f64::from_str(token)?).map(|val| val > 0.5)
+                    }
                     USTM => u_storm = check_missing(f64::from_str(token)?).map_t(MetersPSec),
                     VSTM => v_storm = check_missing(f64::from_str(token)?).map_t(MetersPSec),
                     HLCY => sd.srh = check_missing(f64::from_str(token)?),
+                    WSYM => {
+                        sd.wx_sym_cod = if let Ok(val) = f64::from_str(token) {
+                            if val == 999.0 {
+                                none()
+                            } else {
+                                some(val)
+                            }
+                        } else {
+                            none()
+                        }
+                    }
                 };
             } else {
                 return Err(BufkitFileError::new().into());
@@ -181,8 +210,13 @@ impl Default for SurfaceData {
             c01: none(),
             lyr_2_soil_temp: none(),
             snow_ratio: none(),
+            ice_pellets_type: None,
+            snow_type: None,
+            fzra_type: None,
+            rain_type: None,
             storm_motion: none(),
             srh: none(),
+            wx_sym_cod: none(),
         }
     }
 }
@@ -193,13 +227,13 @@ enum SfcColName {
     NONE,
     STN,
     VALIDTIME,
-    PMSL,
-    PRES,
-    LCLD,
-    MCLD,
-    HCLD,
-    UWND,
-    VWND,
+    PMSL, // Mean sea level pressure
+    PRES, // Station pressure
+    LCLD, // Low cloud amount
+    MCLD, // Mid-level cloud amount
+    HCLD, // High cloud amount
+    UWND, // U-component of the wind
+    VWND, // V-component of the wind
     T2MS, // 2 Meter temperature
     TD2M, // 2 Meter dew point
     SKTC, // Skin temperature
@@ -209,9 +243,14 @@ enum SfcColName {
     C01M, // 1-hour convective precipitation (mm)
     STC2, // Layer 2 soil temperature (K)
     SNRA, // Snow ratio from explicit cloud scheme (percent)
+    WXTS, // Snow weather type
+    WXTP, // Ice pellets weather type
+    WXTZ, // Freezing rain weather type,
+    WXTR, // Rain weather type,
     USTM, // USTM - U-component of storm motion (m/s)
     VSTM, // VSTM - V-component of storm motion (m/s)
     HLCY, // HLCY - Storm relative helicity (m**2/s**2)
+    WSYM, // WSYM - Weather type symbol number
 }
 
 #[derive(Debug)]
@@ -292,6 +331,10 @@ mod test {
                 13 => col_name = UWND,
                 14 => col_name = VWND,
                 15 => col_name = T2MS,
+                17 => col_name = WXTS,
+                18 => col_name = WXTP,
+                19 => col_name = WXTZ,
+                20 => col_name = WXTR,
                 22 => col_name = TD2M,
                 _ => col_name = NONE,
             };
@@ -330,9 +373,15 @@ mod test {
 
                 19 => col_name = T2MS,
 
+                21 => col_name = WXTS,
+                22 => col_name = WXTP,
+                23 => col_name = WXTZ,
+                24 => col_name = WXTR,
                 25 => col_name = USTM,
                 26 => col_name = VSTM,
                 27 => col_name = HLCY,
+
+                29 => col_name = WSYM,
 
                 32 => col_name = TD2M,
 
