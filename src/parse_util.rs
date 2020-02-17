@@ -6,8 +6,9 @@ use chrono::{NaiveDate, NaiveDateTime};
 use optional::{none, some, Optioned};
 
 // Missing or no data values used in Bufkit files
-const MISSING_I32: i32 = -9999;
-const MISSING_F64: f64 = -9999.0;
+pub(crate) const MISSING_I32: i32 = -9999;
+pub(crate) const MISSING_F64: f64 = -9999.0;
+pub(crate) const MISSING_F64_INDEX: f64 = 999.0;
 
 pub(crate) fn check_missing(val: f64) -> Optioned<f64> {
     if val == MISSING_F64 {

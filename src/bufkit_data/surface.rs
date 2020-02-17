@@ -168,7 +168,7 @@ impl SurfaceData {
                     HLCY => sd.srh = check_missing(f64::from_str(token)?),
                     WSYM => {
                         sd.wx_sym_cod = if let Ok(val) = f64::from_str(token) {
-                            if val == 999.0 {
+                            if val == MISSING_F64_INDEX || val == MISSING_F64 {
                                 none()
                             } else {
                                 some(val)
