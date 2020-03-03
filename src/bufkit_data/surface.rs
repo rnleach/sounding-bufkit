@@ -219,7 +219,7 @@ impl Default for SurfaceData {
             storm_motion: none(),
             srh: none(),
             wx_sym_cod: none(),
-            visibility:none(),
+            visibility: none(),
         }
     }
 }

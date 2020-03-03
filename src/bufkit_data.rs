@@ -122,6 +122,34 @@ impl<'a> IntoIterator for &'a BufkitData<'a> {
     }
 }
 
+/// Iterator type for `BufkitData` that returns a `Sounding`.
+pub struct SoundingIterator<'a> {
+    upper_air_it: UpperAirIterator<'a>,
+    surface_it: SurfaceIterator<'a>,
+    source_name: &'a str,
+}
+
+impl<'a> Iterator for SoundingIterator<'a> {
+    type Item = (Sounding, HashMap<&'static str, f64>);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let mut next_ua = self.upper_air_it.next()?;
+        let mut next_sd = self.surface_it.next()?;
+
+        loop {
+            while next_sd.valid_time < next_ua.valid_time {
+                next_sd = self.surface_it.next()?;
+            }
+            while next_ua.valid_time < next_sd.valid_time {
+                next_ua = self.upper_air_it.next()?;
+            }
+            if next_ua.valid_time == next_sd.valid_time {
+                return Some(combine_data(next_ua, next_sd, &self.source_name));
+            }
+        }
+    }
+}
+
 #[allow(clippy::needless_pass_by_value)]
 fn combine_data(
     ua: UpperAir,
@@ -168,7 +196,21 @@ fn combine_data(
         };
     }
 
+    macro_rules! check_and_add_boolean {
+        ($opt:expr, $key:expr, $hash_map:ident) => {
+            if let Some(val) = $opt {
+                if val {
+                    $hash_map.insert($key, 1.0);
+                } else {
+                    $hash_map.insert($key, 0.0);
+                }
+            }
+        };
+    }
+
     let mut bufkit_anal: HashMap<&'static str, f64> = HashMap::new();
+
+    // Add some profile indexes.
     check_and_add!(ua.show, "Showalter", bufkit_anal);
     check_and_add!(ua.swet, "SWeT", bufkit_anal);
     check_and_add!(ua.kinx, "K", bufkit_anal);
@@ -192,6 +234,13 @@ fn combine_data(
     check_and_add!(sd.lyr_2_soil_temp, "Layer2SoilTemp", bufkit_anal);
     check_and_add!(sd.snow_ratio, "SnowRatio", bufkit_anal);
     check_and_add!(sd.visibility, "VisibilityKm", bufkit_anal);
+    check_and_add!(sd.srh, "StormRelativeHelicity", bufkit_anal);
+    check_and_add!(sd.wx_sym_cod, "WxSymbolCode", bufkit_anal);
+    check_and_add_boolean!(sd.snow_type, "PrecipTypeSnow", bufkit_anal);
+    check_and_add_boolean!(sd.rain_type, "PrecipTypeRain", bufkit_anal);
+    check_and_add_boolean!(sd.fzra_type, "PrecipTypeFreezingRain", bufkit_anal);
+    check_and_add_boolean!(sd.ice_pellets_type, "PrecipTypeIcePellets", bufkit_anal);
+
     if let Some(WindUV {
         u: MetersPSec(u),
         v: MetersPSec(v),
@@ -200,53 +249,6 @@ fn combine_data(
         bufkit_anal.insert("StormMotionUMps", u);
         bufkit_anal.insert("StormMotionVMps", v);
     }
-    check_and_add!(sd.srh, "StormRelativeHelicity", bufkit_anal);
-    check_and_add!(sd.wx_sym_cod, "WxSymbolCode", bufkit_anal);
-
-    macro_rules! check_and_add_boolean {
-        ($opt:expr, $key:expr, $hash_map:ident) => {
-            if let Some(val) = $opt {
-                if val {
-                    $hash_map.insert($key, 1.0);
-                } else {
-                    $hash_map.insert($key, 0.0);
-                }
-            }
-        };
-    }
-
-    check_and_add_boolean!(sd.snow_type, "PrecipTypeSnow", bufkit_anal);
-    check_and_add_boolean!(sd.rain_type, "PrecipTypeRain", bufkit_anal);
-    check_and_add_boolean!(sd.fzra_type, "PrecipTypeFreezingRain", bufkit_anal);
-    check_and_add_boolean!(sd.ice_pellets_type, "PrecipTypeIcePellets", bufkit_anal);
 
     (snd, bufkit_anal)
-}
-
-/// Iterator type for `BufkitData` that returns a `Sounding`.
-pub struct SoundingIterator<'a> {
-    upper_air_it: UpperAirIterator<'a>,
-    surface_it: SurfaceIterator<'a>,
-    source_name: &'a str,
-}
-
-impl<'a> Iterator for SoundingIterator<'a> {
-    type Item = (Sounding, HashMap<&'static str, f64>);
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let mut next_ua = self.upper_air_it.next()?;
-        let mut next_sd = self.surface_it.next()?;
-
-        loop {
-            while next_sd.valid_time < next_ua.valid_time {
-                next_sd = self.surface_it.next()?;
-            }
-            while next_ua.valid_time < next_sd.valid_time {
-                next_ua = self.upper_air_it.next()?;
-            }
-            if next_ua.valid_time == next_sd.valid_time {
-                return Some(combine_data(next_ua, next_sd, &self.source_name));
-            }
-        }
-    }
 }
