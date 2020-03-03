@@ -387,6 +387,7 @@ mod test {
 
                 29 => col_name = WSYM,
 
+                31 => col_name = VSBK,
                 32 => col_name = TD2M,
 
                 _ => col_name = NONE,
