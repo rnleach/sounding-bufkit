@@ -191,6 +191,7 @@ fn combine_data(
     check_and_add!(sd.c01, "ConvectivePrecip1HrMm", bufkit_anal);
     check_and_add!(sd.lyr_2_soil_temp, "Layer2SoilTemp", bufkit_anal);
     check_and_add!(sd.snow_ratio, "SnowRatio", bufkit_anal);
+    check_and_add!(sd.visibility, "VisibilityKm", bufkit_anal);
     if let Some(WindUV {
         u: MetersPSec(u),
         v: MetersPSec(v),

@@ -2,7 +2,7 @@
 
 use crate::error::*;
 use chrono::{NaiveDate, NaiveDateTime};
-use metfor::{Celsius, HectoPascal, Kelvin, Knots, MetersPSec, Mm, WindSpdDir, WindUV};
+use metfor::{Celsius, HectoPascal, Kelvin, Km, Knots, MetersPSec, Mm, WindSpdDir, WindUV};
 use optional::{none, some, Optioned};
 use std::error::Error;
 
@@ -40,8 +40,8 @@ pub struct SurfaceData {
     pub srh: Optioned<f64>,      // HLCY - Storm relative helicity (m**2/s**2)
     // SLLH - 1-hour surface evaporation (mm)
     pub wx_sym_cod: Optioned<f64>, // WSYM - Weather type symbol number
-                                   // CDBP - Pressure at the base of cloud (hPa)
-                                   // VSBK - Visibility (km)
+    // CDBP - Pressure at the base of cloud (hPa)
+    pub visibility: Optioned<Km>, // VSBK - Visibility (km)
 }
 
 impl SurfaceData {
@@ -86,6 +86,7 @@ impl SurfaceData {
                 "VSTM" => cols.names.push(VSTM),
                 "HLCY" => cols.names.push(HLCY),
                 "WSYM" => cols.names.push(WSYM),
+                "VSBK" => cols.names.push(VSBK),
                 _ => cols.names.push(NONE),
             }
         }
@@ -177,6 +178,7 @@ impl SurfaceData {
                             none()
                         }
                     }
+                    VSBK => sd.visibility = check_missing(f64::from_str(token)?).map_t(Km),
                 };
             } else {
                 return Err(BufkitFileError::new().into());
@@ -217,6 +219,7 @@ impl Default for SurfaceData {
             storm_motion: none(),
             srh: none(),
             wx_sym_cod: none(),
+            visibility:none(),
         }
     }
 }
@@ -251,6 +254,7 @@ enum SfcColName {
     VSTM, // VSTM - V-component of storm motion (m/s)
     HLCY, // HLCY - Storm relative helicity (m**2/s**2)
     WSYM, // WSYM - Weather type symbol number
+    VSBK, // VSBK - Visibility (km)
 }
 
 #[derive(Debug)]
