@@ -1,6 +1,6 @@
 [package]
 name = "sounding-bufkit"
-version = "0.13.0"
+version = "0.13.1"
 authors = ["Ryan Leach <clumsycodemonkey@gmail.com>"]
 description = """Library to parse and load Bufkit sounding files."""
 repository = "https://github.com/rnleach/sounding-bufkit.git"
