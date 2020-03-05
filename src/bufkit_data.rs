@@ -1,5 +1,4 @@
 //! Module for reading a bufkit file and breaking it into smaller pieces for parsing later.
-use crate::parse_util::check_missing_i32;
 use std::collections::HashMap;
 use std::error::Error;
 use std::path::Path;
@@ -10,12 +9,9 @@ mod surface_section;
 mod upper_air;
 mod upper_air_section;
 
-use metfor::{MetersPSec, Quantity, WindUV};
-use sounding_analysis::{Sounding, StationInfo};
+use sounding_analysis::Sounding;
 
-use self::surface::SurfaceData;
 use self::surface_section::{SurfaceIterator, SurfaceSection};
-use self::upper_air::UpperAir;
 use self::upper_air_section::{UpperAirIterator, UpperAirSection};
 use crate::error::*;
 
