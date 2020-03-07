@@ -1,12 +1,11 @@
 //! Module for reading a bufkit file and breaking it into smaller pieces for parsing later.
-use crate::parse_util::check_missing_i32;
-use std::collections::HashMap;
-
-use metfor::{MetersPSec, Quantity, WindUV};
-use sounding_analysis::{Sounding, StationInfo};
-
 use super::surface::SurfaceData;
 use super::upper_air::UpperAir;
+use crate::parse_util::check_missing_i32;
+use metfor::{MetersPSec, Quantity, WindUV};
+use optional::Optioned;
+use sounding_analysis::{PrecipType, Sounding, StationInfo};
+use std::collections::HashMap;
 
 #[allow(clippy::needless_pass_by_value)]
 pub fn combine_data(
@@ -54,18 +53,6 @@ pub fn combine_data(
         };
     }
 
-    macro_rules! check_and_add_boolean {
-        ($opt:expr, $key:expr, $hash_map:ident) => {
-            if let Some(val) = $opt {
-                if val {
-                    $hash_map.insert($key, 1.0);
-                } else {
-                    $hash_map.insert($key, 0.0);
-                }
-            }
-        };
-    }
-
     let mut bufkit_anal: HashMap<&'static str, f64> = HashMap::new();
 
     // Add some profile indexes.
@@ -93,11 +80,6 @@ pub fn combine_data(
     check_and_add!(sd.snow_ratio, "SnowRatio", bufkit_anal);
     check_and_add!(sd.visibility, "VisibilityKm", bufkit_anal);
     check_and_add!(sd.srh, "StormRelativeHelicity", bufkit_anal);
-    check_and_add!(sd.wx_sym_cod, "WxSymbolCode", bufkit_anal);
-    check_and_add_boolean!(sd.snow_type, "PrecipTypeSnow", bufkit_anal);
-    check_and_add_boolean!(sd.rain_type, "PrecipTypeRain", bufkit_anal);
-    check_and_add_boolean!(sd.fzra_type, "PrecipTypeFreezingRain", bufkit_anal);
-    check_and_add_boolean!(sd.ice_pellets_type, "PrecipTypeIcePellets", bufkit_anal);
 
     if let Some(WindUV {
         u: MetersPSec(u),
@@ -108,5 +90,69 @@ pub fn combine_data(
         bufkit_anal.insert("StormMotionVMps", v);
     }
 
+    // Get the Wx symbol code from bufkit and translate it into the kind that is used in
+    // sounding-analysis.
+    let wx_code: Optioned<f64> = derived_wx_code(
+        sd.wx_sym_cod.map(|code| code as u8),
+        sd.rain_type,
+        sd.snow_type,
+        sd.fzra_type,
+        sd.ice_pellets_type,
+    )
+    .map(|p_type| p_type as u8 as f64)
+    .into();
+    check_and_add!(wx_code, "WxSymbolCode", bufkit_anal);
+
     (snd, bufkit_anal)
+}
+fn derived_wx_code(
+    wx_code: Option<u8>,
+    is_rain: Option<bool>,
+    is_snow: Option<bool>,
+    is_fzra: Option<bool>,
+    is_ip: Option<bool>,
+) -> Option<PrecipType> {
+    match wx_code {
+        Some(60) => Some(PrecipType::LightRain),
+        Some(66) => Some(PrecipType::LightFreezingRain),
+        Some(70) => Some(PrecipType::LightSnow),
+        Some(79) => Some(PrecipType::LightIcePellets),
+        _ => return None,
+    }
+    .or_else(|| {
+        is_rain.and_then(|isra| {
+            if isra {
+                Some(PrecipType::LightRain)
+            } else {
+                None
+            }
+        })
+    })
+    .or_else(|| {
+        is_snow.and_then(|issn| {
+            if issn {
+                Some(PrecipType::LightSnow)
+            } else {
+                None
+            }
+        })
+    })
+    .or_else(|| {
+        is_fzra.and_then(|isfz| {
+            if isfz {
+                Some(PrecipType::LightFreezingRain)
+            } else {
+                None
+            }
+        })
+    })
+    .or_else(|| {
+        is_ip.and_then(|isip| {
+            if isip {
+                Some(PrecipType::LightIcePellets)
+            } else {
+                None
+            }
+        })
+    })
 }
