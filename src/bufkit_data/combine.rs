@@ -18,7 +18,8 @@ pub fn combine_data(
         .into_option()
         .and_then(|lat| ua.lon.into_option().map(|lon| (lat, lon)));
 
-    let station = StationInfo::new_with_values(check_missing_i32(ua.num), coords, ua.elevation);
+    let station =
+        StationInfo::new_with_values(check_missing_i32(ua.num), ua.id, coords, ua.elevation);
 
     let snd = Sounding::new()
         .with_source_description(fname.to_owned())

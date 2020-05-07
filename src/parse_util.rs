@@ -44,7 +44,8 @@ where
     FE: Fn(char) -> bool,
 {
     let mut idx = src.find(key).ok_or_else(BufkitFileError::new)?;
-    let mut head = &src[idx..];
+    let head = &src[idx..];
+    let mut head = head.trim_start_matches(key);
     idx = head.find(start_val).ok_or_else(BufkitFileError::new)?;
     head = &head[idx..];
     // When finding the end of the value, you may go all the way to the end of the slice.
@@ -60,6 +61,17 @@ fn test_parse_kv() {
         "STID = STNM = 727730 TIME = 170401/0000 \
          SLAT = 46.92 SLON = -114.08 SELV = 972.0 \
          STIM = 0";
+
+    if let Ok((value_to_parse, head)) =
+        parse_kv(test_data,
+                 "STID",
+                 |c| char::is_alphanumeric(c),
+                 |c| !char::is_alphanumeric(c)) {
+        assert_eq!(value_to_parse, "STNM");
+        assert_eq!(head, " = 727730 TIME = 170401/0000 SLAT = 46.92 SLON = -114.08 SELV = 972.0 STIM = 0");
+    } else {
+        assert!(false, "There was an error parsing.");
+    }
 
     if let Ok((value_to_parse, head)) =
         parse_kv(test_data,

@@ -19,6 +19,7 @@ pub struct UpperAir {
     pub num: i32,                    // station number, USAF number, eg 727730
     pub valid_time: NaiveDateTime,   // valid time of sounding
     pub lead_time: i32,              // Forecast lead time in hours from model init
+    pub id: Option<String>,          // Usually a 3 or 4 letter alpha numeric designation.
     pub lat: Optioned<f64>,          // latitude
     pub lon: Optioned<f64>,          // longitude
     pub elevation: Optioned<Meters>, // elevation (m)
@@ -73,6 +74,7 @@ impl UpperAir {
             num: station_info.num,
             valid_time: station_info.valid_time,
             lead_time: station_info.lead_time,
+            id: station_info.id,
             lat: station_info.lat,
             lon: station_info.lon,
             elevation: station_info.elevation,

@@ -1,5 +1,6 @@
 //! Parse the station info section of a bufkit upper air section.
 
+use crate::parse_util::{parse_f64, parse_i32, parse_kv, parse_naive_date_time};
 use chrono::NaiveDateTime;
 use metfor::Meters;
 use optional::Optioned;
@@ -11,6 +12,7 @@ pub struct StationInfo {
     pub num: i32,                    // station number, USAF number, eg 727730
     pub valid_time: NaiveDateTime,   // valid time of sounding
     pub lead_time: i32,              // Forecast lead time in hours from model init
+    pub id: Option<String>,          // Usually a 3-4 character alphanumeric identifier.
     pub lat: Optioned<f64>,          // latitude
     pub lon: Optioned<f64>,          // longitude
     pub elevation: Optioned<Meters>, // elevation (m)
@@ -32,10 +34,23 @@ impl StationInfo {
         // SELV - Station elevation (m)
         // STIM - Forecast hour
 
-        use crate::parse_util::{parse_f64, parse_i32, parse_kv, parse_naive_date_time};
+        // Get the station id
+        let (station_id, mut head) = parse_kv(
+            src,
+            "STID",
+            |c| char::is_alphanumeric(c),
+            |c| !char::is_alphanumeric(c),
+        )?;
+
+        let station_id = if station_id == "STNM" {
+            head = src;
+            None
+        } else {
+            Some(station_id.to_owned())
+        };
 
         // Get station num
-        let (station_num, head) = parse_i32(src, "STNM")?;
+        let (station_num, head) = parse_i32(head, "STNM")?;
 
         // Get valid time
         let (val_to_parse, head) = parse_kv(
@@ -59,6 +74,7 @@ impl StationInfo {
 
         Ok(StationInfo {
             num: station_num,
+            id: station_id,
             valid_time: vt,
             lead_time: lt,
             lat,
@@ -82,12 +98,14 @@ fn test_station_info_parse() {
 
     let StationInfo {
         num,
+        id,
         valid_time,
         lead_time,
         lat,
         lon,
         elevation,
     } = si.unwrap();
+    assert_eq!(id, None);
     assert_eq!(num, 727730);
     assert_eq!(valid_time, NaiveDate::from_ymd(2017, 4, 1).and_hms(0, 0, 0));
     assert_eq!(lead_time, 0);
@@ -104,12 +122,14 @@ fn test_station_info_parse() {
 
     let StationInfo {
         num,
+        id,
         valid_time,
         lead_time,
         lat,
         lon,
         elevation,
     } = si.unwrap();
+    assert_eq!(id.unwrap(), "KMSO");
     assert_eq!(num, 727730);
     assert_eq!(
         valid_time,
