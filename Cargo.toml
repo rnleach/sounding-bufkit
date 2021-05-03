@@ -1,6 +1,6 @@
 [package]
 name = "sounding-bufkit"
-version = "0.14.3"
+version = "0.15.0"
 authors = ["Ryan <rnleach@users.noreply.github.com>"]
 description = """Library to parse and load Bufkit sounding files."""
 repository = "https://github.com/rnleach/sounding-bufkit.git"
@@ -10,11 +10,10 @@ exclude = ["**/*.rs.bk",".gitignore",".vscode/**/*", "tests/**/*", "tags", "exam
 categories = ["science"]
 keywords = ["weather","sounding","meteorology", "skew-t", "Bufkit"]
 edition = "2018"
-publish=false
 
 [dependencies]
-metfor = "^0.7.4"
-sounding-analysis = {git="https://github.com/rnleach/sounding-analysis.git", tag="v0.15.1"}
+metfor = "^0.8.1"
+sounding-analysis = "^0.16"
 chrono="^0.4"
 optional = "^0.5.0"
 
