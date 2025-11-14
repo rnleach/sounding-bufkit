@@ -195,7 +195,10 @@ pub fn parse_naive_date_time(src: &str) -> Result<NaiveDateTime, Box<dyn Error>>
     let day = u32::from_str(&val_to_parse[4..6])?;
     let hour = u32::from_str(&val_to_parse[7..9])?;
     let minute = u32::from_str(&val_to_parse[9..11])?;
-    Ok(NaiveDate::from_ymd(year, month, day).and_hms(hour, minute, 0))
+
+    NaiveDate::from_ymd_opt(year, month, day)
+        .and_then(|dt| dt.and_hms_opt(hour, minute, 0))
+        .ok_or(Box::new(crate::error::BufkitFileError {}))
 }
 
 #[test]
@@ -203,7 +206,7 @@ fn test_parse_naive_date_time() {
     let test_data = " 170401/0000 ";
 
     let test_value = parse_naive_date_time(test_data).unwrap();
-    assert_eq!(test_value, NaiveDate::from_ymd(2017, 4, 1).and_hms(0, 0, 0));
+    assert_eq!(test_value, NaiveDate::from_ymd_opt(2017, 4, 1).unwrap().and_hms_opt(0, 0, 0).unwrap());
 }
 
 /// Find a blank line, or a line without any ASCII numbers or letters.

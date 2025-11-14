@@ -227,12 +227,12 @@ mod test {
                 .map(|sd| sd.valid_time)
                 .collect::<Vec<NaiveDateTime>>(),
             vec![
-                NaiveDate::from_ymd(2017, 4, 1).and_hms(0, 0, 0),
-                NaiveDate::from_ymd(2017, 4, 1).and_hms(3, 0, 0),
-                NaiveDate::from_ymd(2017, 4, 1).and_hms(6, 0, 0),
-                NaiveDate::from_ymd(2017, 4, 1).and_hms(9, 0, 0),
-                NaiveDate::from_ymd(2017, 4, 1).and_hms(12, 0, 0),
-                NaiveDate::from_ymd(2017, 4, 1).and_hms(15, 0, 0),
+                NaiveDate::from_ymd_opt(2017, 4, 1).unwrap().and_hms_opt(0, 0, 0).unwrap(),
+                NaiveDate::from_ymd_opt(2017, 4, 1).unwrap().and_hms_opt(3, 0, 0).unwrap(),
+                NaiveDate::from_ymd_opt(2017, 4, 1).unwrap().and_hms_opt(6, 0, 0).unwrap(),
+                NaiveDate::from_ymd_opt(2017, 4, 1).unwrap().and_hms_opt(9, 0, 0).unwrap(),
+                NaiveDate::from_ymd_opt(2017, 4, 1).unwrap().and_hms_opt(12, 0, 0).unwrap(),
+                NaiveDate::from_ymd_opt(2017, 4, 1).unwrap().and_hms_opt(15, 0, 0).unwrap(),
             ]
         );
 

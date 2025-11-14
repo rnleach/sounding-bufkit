@@ -107,7 +107,7 @@ fn test_station_info_parse() {
     } = si.unwrap();
     assert_eq!(id, None);
     assert_eq!(num, 727730);
-    assert_eq!(valid_time, NaiveDate::from_ymd(2017, 4, 1).and_hms(0, 0, 0));
+    assert_eq!(valid_time, NaiveDate::from_ymd_opt(2017, 4, 1).unwrap().and_hms_opt(0, 0, 0).unwrap());
     assert_eq!(lead_time, 0);
     assert_eq!(lat, some(46.92));
     assert_eq!(lon, some(-114.08));
@@ -133,7 +133,7 @@ fn test_station_info_parse() {
     assert_eq!(num, 727730);
     assert_eq!(
         valid_time,
-        NaiveDate::from_ymd(2017, 4, 4).and_hms(12, 0, 0)
+        NaiveDate::from_ymd_opt(2017, 4, 4).unwrap().and_hms_opt(12, 0, 0).unwrap()
     );
     assert_eq!(lead_time, 84);
     assert_eq!(lat, some(46.87));

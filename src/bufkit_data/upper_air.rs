@@ -289,7 +289,7 @@ mod test {
         assert_eq!(snd.num, 727730);
         assert_eq!(
             snd.valid_time,
-            NaiveDate::from_ymd(2017, 4, 1).and_hms(1, 0, 0)
+            NaiveDate::from_ymd_opt(2017, 4, 1).unwrap().and_hms_opt(1, 0, 0).unwrap()
         );
         assert_eq!(snd.lead_time, 1);
         assert_eq!(snd.lat, some(46.87));

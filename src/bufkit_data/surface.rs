@@ -196,7 +196,10 @@ impl Default for SurfaceData {
     fn default() -> SurfaceData {
         SurfaceData {
             station_num: ::std::i32::MIN,
-            valid_time: NaiveDate::from_ymd(0, 1, 1).and_hms(0, 0, 0),
+            valid_time: NaiveDate::from_ymd_opt(0, 1, 1)
+                .unwrap()
+                .and_hms_opt(0, 0, 0)
+                .unwrap(),
             mslp: none(),
             station_pres: none(),
             low_cloud: none(),
