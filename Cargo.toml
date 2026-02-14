@@ -1,6 +1,6 @@
 [package]
 name = "sounding-bufkit"
-version = "0.18.0"
+version = "0.19.0"
 authors = ["Ryan <rnleach@users.noreply.github.com>"]
 description = """Library to parse and load Bufkit sounding files."""
 repository = "https://github.com/rnleach/sounding-bufkit.git"
@@ -13,7 +13,7 @@ edition = "2024"
 
 [dependencies]
 metfor = "^0.10.0"
-sounding-analysis = "^0.19"
+sounding-analysis = "^0.20"
 chrono="^0.4"
 optional = "^0.5.0"
 
